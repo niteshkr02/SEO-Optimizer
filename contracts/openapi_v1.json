@@ -1,0 +1,2818 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SEO Optimizer API",
+    "description": "Evidence-based Technical SEO Diagnosis and Code Resolution Platform API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health Check",
+        "description": "Returns platform operational health and active component versions.",
+        "operationId": "health_check_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Check Api V1 Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scan": {
+      "post": {
+        "tags": [
+          "Scan"
+        ],
+        "summary": "Execute public single-page deterministic SEO scan",
+        "description": "Executes a zero-trust single URL audit with deterministic evidence and scoring.",
+        "operationId": "scan_url_api_v1_scan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditReportDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scan/{token}": {
+      "get": {
+        "tags": [
+          "Scan"
+        ],
+        "summary": "Retrieve a previously executed scan report by token",
+        "description": "Returns stored audit report for the given scan token.",
+        "operationId": "get_scan_by_token_api_v1_scan__token__get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditReportDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/resolution/plan": {
+      "post": {
+        "tags": [
+          "Resolution"
+        ],
+        "summary": "Generate evidence-backed deterministic resolution plan",
+        "description": "Generates an evidence-backed resolution plan and reviewable code patches from audit findings.",
+        "operationId": "generate_resolution_plan_api_v1_resolution_plan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuditReportDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolutionPlanDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/verification/compare": {
+      "post": {
+        "tags": [
+          "Verification"
+        ],
+        "summary": "Compare baseline and post-change audit reports",
+        "description": "Executes deterministic before-and-after audit verification (Model E33).",
+        "operationId": "compare_audit_reports_api_v1_verification_compare_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificationCompareRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationReportDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/verification/export-markdown": {
+      "post": {
+        "tags": [
+          "Verification"
+        ],
+        "summary": "Export verification report as Markdown document",
+        "description": "Renders a verification report into a GitHub-flavored Markdown document.",
+        "operationId": "export_verification_markdown_api_v1_verification_export_markdown_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificationReportDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkdownExportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/verification/export-markdown/raw": {
+      "post": {
+        "tags": [
+          "Verification"
+        ],
+        "summary": "Export verification report as raw text/markdown stream",
+        "description": "Returns raw text/markdown file stream.",
+        "operationId": "export_verification_markdown_raw_api_v1_verification_export_markdown_raw_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificationReportDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leads": {
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Submit technical SEO service inquiry",
+        "description": "Public endpoint to capture client service inquiries, enforcing rate limiting and honeypot spam protection.",
+        "operationId": "submit_lead_api_v1_leads_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeadSubmissionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "List all captured leads (Admin)",
+        "description": "Returns filtered and paginated leads. Requires administrative authorization.",
+        "operationId": "list_leads_api_v1_leads_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/LeadStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status",
+              "title": "Status"
+            },
+            "description": "Filter by status"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search by name, email, URL, or city",
+              "title": "Search"
+            },
+            "description": "Search by name, email, URL, or city"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "description": "Page size limit",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Page size limit"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Page offset",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Page offset"
+          },
+          {
+            "name": "X-Admin-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-Api-Key"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leads/{lead_id}": {
+      "get": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Get lead details (Admin)",
+        "description": "Retrieves full details and status history for a single lead.",
+        "operationId": "get_lead_api_v1_leads__lead_id__get",
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Lead Id"
+            }
+          },
+          {
+            "name": "X-Admin-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-Api-Key"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leads/{lead_id}/status": {
+      "patch": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Update lead workflow status (Admin)",
+        "description": "Updates lead workflow status and appends to the immutable audit trail.",
+        "operationId": "update_lead_status_api_v1_leads__lead_id__status_patch",
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Lead Id"
+            }
+          },
+          {
+            "name": "X-Admin-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-Api-Key"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeadStatusUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leads/{lead_id}/history": {
+      "get": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Get lead status audit history (Admin)",
+        "description": "Returns the immutable status change audit trail for a lead.",
+        "operationId": "get_lead_history_api_v1_leads__lead_id__history_get",
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Lead Id"
+            }
+          },
+          {
+            "name": "X-Admin-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-Api-Key"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LeadStatusHistoryDTO"
+                  },
+                  "title": "Response Get Lead History Api V1 Leads  Lead Id  History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leads/{lead_id}/brief": {
+      "get": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Generate Consultation Service Brief (JSON)",
+        "description": "Generates an evidence-backed consultation brief combining lead, audit, and resolution plan.",
+        "operationId": "get_service_brief_api_v1_leads__lead_id__brief_get",
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Lead Id"
+            }
+          },
+          {
+            "name": "X-Admin-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-Api-Key"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceBriefDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leads/{lead_id}/brief/markdown": {
+      "get": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Export Consultation Brief as Markdown",
+        "description": "Generates and returns the Consultation Service Brief formatted as Markdown.",
+        "operationId": "export_brief_markdown_api_v1_leads__lead_id__brief_markdown_get",
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Lead Id"
+            }
+          },
+          {
+            "name": "X-Admin-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-Api-Key"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leads/{lead_id}/brief/pdf": {
+      "get": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Export Consultation Brief as PDF",
+        "description": "Compiles and streams the Consultation Service Brief as a downloadable PDF document.",
+        "operationId": "export_brief_pdf_api_v1_leads__lead_id__brief_pdf_get",
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Lead Id"
+            }
+          },
+          {
+            "name": "X-Admin-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-Api-Key"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AuditReportDTO": {
+        "properties": {
+          "scanToken": {
+            "type": "string",
+            "title": "Scantoken",
+            "description": "Cryptographic unique scan identifier."
+          },
+          "targetUrl": {
+            "type": "string",
+            "title": "Targeturl",
+            "description": "Initial requested URL."
+          },
+          "finalUrl": {
+            "type": "string",
+            "title": "Finalurl",
+            "description": "Final landing URL following redirects."
+          },
+          "statusCode": {
+            "type": "integer",
+            "title": "Statuscode",
+            "description": "Final HTTP status code."
+          },
+          "status": {
+            "$ref": "#/components/schemas/ScanStatus",
+            "description": "Scan operational status.",
+            "default": "COMPLETED"
+          },
+          "overallScore": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overallscore",
+            "description": "Overall SEO Health Score (0-100), or None if unavailable."
+          },
+          "categoryScores": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CategoryScoreDTO"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/RuleCategory"
+            },
+            "type": "object",
+            "title": "Categoryscores",
+            "description": "Dictionary of category scores."
+          },
+          "completenessScore": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completenessscore",
+            "description": "Overall report completeness index (0-100)."
+          },
+          "categoryAvailability": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/RuleCategory"
+            },
+            "type": "object",
+            "title": "Categoryavailability",
+            "description": "Explicit map of category availability."
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Findings",
+            "description": "List of all evaluated findings with evidence."
+          },
+          "robotsSummary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RobotsTxtSummaryDTO"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Summary of robots.txt discovery and path evaluation."
+          },
+          "sitemapSummary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SitemapSummaryDTO"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Summary of XML sitemap discovery and Model E12 evaluation."
+          },
+          "isSpaDetected": {
+            "type": "boolean",
+            "title": "Isspadetected",
+            "description": "True if static analysis detected Single-Page Application behavior.",
+            "default": false
+          },
+          "rulesetVersion": {
+            "type": "string",
+            "title": "Rulesetversion",
+            "description": "Ruleset version applied.",
+            "default": "1.0.0"
+          },
+          "scoringModelVersion": {
+            "type": "string",
+            "title": "Scoringmodelversion",
+            "description": "Scoring model version applied.",
+            "default": "1.0.0"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat",
+            "description": "Scan execution timestamp."
+          }
+        },
+        "type": "object",
+        "required": [
+          "scanToken",
+          "targetUrl",
+          "finalUrl",
+          "statusCode"
+        ],
+        "title": "AuditReportDTO",
+        "description": "Comprehensive evidence-backed SEO audit report response."
+      },
+      "AuditScopeDTO": {
+        "properties": {
+          "hasAuditReport": {
+            "type": "boolean",
+            "title": "Hasauditreport"
+          },
+          "scanToken": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scantoken"
+          },
+          "scanTimestamp": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scantimestamp"
+          },
+          "targetUrl": {
+            "type": "string",
+            "title": "Targeturl"
+          },
+          "statusCode": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statuscode"
+          },
+          "overallHealthScore": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overallhealthscore"
+          },
+          "completenessScore": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completenessscore"
+          },
+          "totalChecksEvaluated": {
+            "type": "integer",
+            "title": "Totalchecksevaluated",
+            "default": 0
+          },
+          "failingChecksCount": {
+            "type": "integer",
+            "title": "Failingcheckscount",
+            "default": 0
+          },
+          "warningChecksCount": {
+            "type": "integer",
+            "title": "Warningcheckscount",
+            "default": 0
+          },
+          "passedChecksCount": {
+            "type": "integer",
+            "title": "Passedcheckscount",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "hasAuditReport",
+          "targetUrl"
+        ],
+        "title": "AuditScopeDTO",
+        "description": "Scope and telemetry coverage of the associated audit."
+      },
+      "CategoryScoreDTO": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/RuleCategory",
+            "description": "Category identifier."
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score",
+            "description": "Category score (0-100), or None if no applicable checks evaluated."
+          },
+          "completeness": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completeness",
+            "description": "Percentage of applicable checks that yielded definitive PASS/FAIL."
+          },
+          "applicableChecks": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Applicablechecks",
+            "description": "Total applicable checks in category.",
+            "default": 0
+          },
+          "evaluatedChecks": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Evaluatedchecks",
+            "description": "Total checks definitively evaluated.",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "category"
+        ],
+        "title": "CategoryScoreDTO",
+        "description": "Detailed score summary for an audit category."
+      },
+      "ClientDetailsDTO": {
+        "properties": {
+          "customerName": {
+            "type": "string",
+            "title": "Customername"
+          },
+          "businessEmail": {
+            "type": "string",
+            "title": "Businessemail"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "title": "Phonenumber"
+          },
+          "websiteUrl": {
+            "type": "string",
+            "title": "Websiteurl"
+          },
+          "businessCategory": {
+            "type": "string",
+            "title": "Businesscategory"
+          },
+          "targetCity": {
+            "type": "string",
+            "title": "Targetcity"
+          },
+          "requestedService": {
+            "type": "string",
+            "title": "Requestedservice"
+          },
+          "urgency": {
+            "type": "string",
+            "title": "Urgency"
+          },
+          "problemDescription": {
+            "type": "string",
+            "title": "Problemdescription"
+          }
+        },
+        "type": "object",
+        "required": [
+          "customerName",
+          "businessEmail",
+          "phoneNumber",
+          "websiteUrl",
+          "businessCategory",
+          "targetCity",
+          "requestedService",
+          "urgency",
+          "problemDescription"
+        ],
+        "title": "ClientDetailsDTO",
+        "description": "Customer and organizational details from inquiry."
+      },
+      "CodePatchProposal": {
+        "properties": {
+          "patchId": {
+            "type": "string",
+            "title": "Patchid",
+            "description": "Unique patch identifier."
+          },
+          "findingId": {
+            "type": "string",
+            "title": "Findingid",
+            "description": "Associated audit rule ID."
+          },
+          "affectedFile": {
+            "type": "string",
+            "title": "Affectedfile",
+            "description": "Target source code file path. Marked UNKNOWN for public scans.",
+            "default": "UNKNOWN (Requires Repository Access)"
+          },
+          "diffContent": {
+            "type": "string",
+            "title": "Diffcontent",
+            "description": "Git unified diff representation of proposed code change."
+          },
+          "beforeSnippet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Beforesnippet",
+            "description": "Verbatim original code or HTML snippet."
+          },
+          "afterSnippet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aftersnippet",
+            "description": "Proposed corrected code or HTML snippet."
+          },
+          "patchHash": {
+            "type": "string",
+            "title": "Patchhash",
+            "description": "SHA-256 cryptographic hash of the diffContent."
+          },
+          "requiresApproval": {
+            "type": "boolean",
+            "title": "Requiresapproval",
+            "description": "Strict safety requirement: explicit human authorization required.",
+            "default": true
+          },
+          "approvalStatus": {
+            "type": "string",
+            "title": "Approvalstatus",
+            "description": "PENDING_REVIEW | APPROVED | REJECTED",
+            "default": "PENDING_REVIEW"
+          }
+        },
+        "type": "object",
+        "required": [
+          "patchId",
+          "findingId",
+          "diffContent",
+          "patchHash"
+        ],
+        "title": "CodePatchProposal",
+        "description": "Deterministic, reviewable code modification proposal."
+      },
+      "CriticalIssueSummaryDTO": {
+        "properties": {
+          "ruleId": {
+            "type": "string",
+            "title": "Ruleid"
+          },
+          "category": {
+            "$ref": "#/components/schemas/RuleCategory"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/IssueSeverity"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "observedValue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observedvalue"
+          },
+          "expectedValue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expectedvalue"
+          },
+          "rawSnippet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rawsnippet"
+          },
+          "targetElement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetelement"
+          },
+          "remediationGuidance": {
+            "type": "string",
+            "title": "Remediationguidance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruleId",
+          "category",
+          "severity",
+          "title",
+          "description",
+          "remediationGuidance"
+        ],
+        "title": "CriticalIssueSummaryDTO",
+        "description": "Summarized critical or high-severity finding with verbatim evidence."
+      },
+      "Finding": {
+        "properties": {
+          "ruleId": {
+            "type": "string",
+            "title": "Ruleid",
+            "description": "Unique immutable rule key (e.g. 'canonical-presence')."
+          },
+          "category": {
+            "$ref": "#/components/schemas/RuleCategory",
+            "description": "Taxonomic category of the audit rule."
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Human-readable title of the rule."
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Concise explanation of the standard evaluated."
+          },
+          "state": {
+            "$ref": "#/components/schemas/RuleState",
+            "description": "Deterministic 5-state evaluation outcome."
+          },
+          "severity": {
+            "$ref": "#/components/schemas/IssueSeverity",
+            "description": "Impact severity rating."
+          },
+          "weight": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Weight",
+            "description": "Rule weight in category scoring (w_i).",
+            "default": 5
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/FindingEvidence",
+            "description": "Immutable verifiable proof object."
+          },
+          "remediationGuidance": {
+            "type": "string",
+            "title": "Remediationguidance",
+            "description": "Deterministic actionable remediation instructions."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ruleId",
+          "category",
+          "title",
+          "description",
+          "state",
+          "severity",
+          "evidence",
+          "remediationGuidance"
+        ],
+        "title": "Finding",
+        "description": "Immutable finding object representing a single evaluated audit rule."
+      },
+      "FindingComparisonDTO": {
+        "properties": {
+          "ruleId": {
+            "type": "string",
+            "title": "Ruleid",
+            "description": "Unique rule identifier."
+          },
+          "category": {
+            "$ref": "#/components/schemas/RuleCategory",
+            "description": "Audit taxonomic category."
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Rule title."
+          },
+          "previousState": {
+            "$ref": "#/components/schemas/RuleState",
+            "description": "State in baseline audit."
+          },
+          "currentState": {
+            "$ref": "#/components/schemas/RuleState",
+            "description": "State in post-change audit."
+          },
+          "transition": {
+            "$ref": "#/components/schemas/VerificationTransition",
+            "description": "RESOLVED | UNRESOLVED | REGRESSED | PERSISTENT_PASS | UNKNOWN | NOT_RECHECKED"
+          },
+          "wasAttempted": {
+            "type": "boolean",
+            "title": "Wasattempted",
+            "description": "True if remediation was attempted for this rule.",
+            "default": false
+          },
+          "previousEvidence": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Previousevidence",
+            "description": "Evidence from baseline audit."
+          },
+          "currentEvidence": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Currentevidence",
+            "description": "Evidence from post-change audit."
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruleId",
+          "category",
+          "title",
+          "previousState",
+          "currentState",
+          "transition"
+        ],
+        "title": "FindingComparisonDTO",
+        "description": "Detailed transition comparison for a specific audit rule."
+      },
+      "FindingEvidence": {
+        "properties": {
+          "observedValue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observedvalue",
+            "description": "Exact observed value, attribute, text or header from crawl."
+          },
+          "expectedValue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expectedvalue",
+            "description": "Standard compliance requirement or expected value."
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ProvenanceCategory",
+            "description": "Explicit provenance classification.",
+            "default": "DIRECT_OBSERVATION"
+          },
+          "targetElement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetelement",
+            "description": "CSS selector, XPath, or DOM container hierarchy."
+          },
+          "rawSnippet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rawsnippet",
+            "description": "Exact verbatim HTML tag or response header snippet."
+          },
+          "httpStatusCode": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Httpstatuscode",
+            "description": "Relevant HTTP response status code."
+          },
+          "responseTimeMs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsetimems",
+            "description": "Round-trip network timing in milliseconds."
+          },
+          "lineNumber": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linenumber",
+            "description": "Line number in raw HTML where element begins."
+          },
+          "contextData": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contextdata",
+            "description": "Additional structured context (e.g. redirect history, parsed JSON-LD)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "FindingEvidence",
+        "description": "Immutable structured evidence object attached to every evaluated finding."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "IssueSeverity": {
+        "type": "string",
+        "enum": [
+          "CRITICAL",
+          "HIGH",
+          "MEDIUM",
+          "LOW",
+          "INFO"
+        ],
+        "title": "IssueSeverity",
+        "description": "Impact severity rating for audit findings."
+      },
+      "LeadDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique lead identifier"
+          },
+          "scanToken": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scantoken",
+            "description": "Linked audit scan token if available"
+          },
+          "customerName": {
+            "type": "string",
+            "title": "Customername",
+            "description": "Client contact name"
+          },
+          "businessEmail": {
+            "type": "string",
+            "title": "Businessemail",
+            "description": "Business email address"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "title": "Phonenumber",
+            "description": "Phone number with country code"
+          },
+          "websiteUrl": {
+            "type": "string",
+            "title": "Websiteurl",
+            "description": "Target website URL"
+          },
+          "businessCategory": {
+            "type": "string",
+            "title": "Businesscategory",
+            "description": "Business industry category"
+          },
+          "targetCity": {
+            "type": "string",
+            "title": "Targetcity",
+            "description": "Target city / location"
+          },
+          "requestedService": {
+            "type": "string",
+            "title": "Requestedservice",
+            "description": "Requested SEO service"
+          },
+          "problemDescription": {
+            "type": "string",
+            "title": "Problemdescription",
+            "description": "Client problem statement"
+          },
+          "urgency": {
+            "$ref": "#/components/schemas/LeadUrgency",
+            "description": "Client urgency"
+          },
+          "status": {
+            "$ref": "#/components/schemas/LeadStatus",
+            "description": "Current workflow status",
+            "default": "NEW"
+          },
+          "consentGiven": {
+            "type": "boolean",
+            "title": "Consentgiven",
+            "description": "Explicit consent status",
+            "default": true
+          },
+          "consentTimestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Consenttimestamp",
+            "description": "Timestamp when consent was recorded"
+          },
+          "privacyPolicyVersion": {
+            "type": "string",
+            "title": "Privacypolicyversion",
+            "description": "Privacy policy version"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat",
+            "description": "Lead creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updatedat",
+            "description": "Lead last updated timestamp"
+          },
+          "statusHistory": {
+            "items": {
+              "$ref": "#/components/schemas/LeadStatusHistoryDTO"
+            },
+            "type": "array",
+            "title": "Statushistory",
+            "description": "Historical audit trail of status changes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "customerName",
+          "businessEmail",
+          "phoneNumber",
+          "websiteUrl",
+          "businessCategory",
+          "targetCity",
+          "requestedService",
+          "problemDescription",
+          "urgency",
+          "consentTimestamp",
+          "privacyPolicyVersion",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "LeadDTO",
+        "description": "Canonical persisted service lead entity."
+      },
+      "LeadListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LeadDTO"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "List of matching leads"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total matching leads count"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "description": "Pagination page size limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset",
+            "description": "Pagination offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "LeadListResponse",
+        "description": "Paginated list of leads for admin management."
+      },
+      "LeadStatus": {
+        "type": "string",
+        "enum": [
+          "NEW",
+          "CONTACTED",
+          "SCOPED",
+          "CONTRACTED",
+          "CLOSED"
+        ],
+        "title": "LeadStatus",
+        "description": "Lifecycle stages for consulting service leads."
+      },
+      "LeadStatusHistoryDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique status change ID"
+          },
+          "leadId": {
+            "type": "string",
+            "title": "Leadid",
+            "description": "Associated lead ID"
+          },
+          "previousStatus": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LeadStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Prior lifecycle status"
+          },
+          "newStatus": {
+            "$ref": "#/components/schemas/LeadStatus",
+            "description": "New lifecycle status"
+          },
+          "changedBy": {
+            "type": "string",
+            "title": "Changedby",
+            "description": "Identifier of engineer or system making change"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Optional transition notes"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat",
+            "description": "Transition timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "leadId",
+          "newStatus",
+          "changedBy"
+        ],
+        "title": "LeadStatusHistoryDTO",
+        "description": "Audit trail record of lead status transition."
+      },
+      "LeadStatusUpdateRequest": {
+        "properties": {
+          "newStatus": {
+            "$ref": "#/components/schemas/LeadStatus",
+            "description": "Target status: NEW | CONTACTED | SCOPED | CONTRACTED | CLOSED"
+          },
+          "changedBy": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Changedby",
+            "description": "Admin operator or engineer performing the update"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Operational context or qualification notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "newStatus",
+          "changedBy"
+        ],
+        "title": "LeadStatusUpdateRequest",
+        "description": "Payload to transition lead workflow status."
+      },
+      "LeadSubmissionRequest": {
+        "properties": {
+          "customerName": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 2,
+            "title": "Customername",
+            "description": "Full name of client contact"
+          },
+          "businessEmail": {
+            "type": "string",
+            "maxLength": 255,
+            "format": "email",
+            "title": "Businessemail",
+            "description": "Business or corporate email address"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 7,
+            "title": "Phonenumber",
+            "description": "Contact phone number including country code (e.g. +1 555-0199)"
+          },
+          "websiteUrl": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 4,
+            "title": "Websiteurl",
+            "description": "Audited website URL (must start with http:// or https://)"
+          },
+          "businessCategory": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Businesscategory",
+            "description": "Industry vertical or category (e.g. E-Commerce, SaaS, Local)"
+          },
+          "targetCity": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Targetcity",
+            "description": "Target geographic market / city"
+          },
+          "requestedService": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Requestedservice",
+            "description": "Type of SEO consulting or engineering service requested"
+          },
+          "problemDescription": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 10,
+            "title": "Problemdescription",
+            "description": "Detailed description of SEO issues or objectives"
+          },
+          "urgency": {
+            "$ref": "#/components/schemas/LeadUrgency",
+            "description": "Client operational urgency",
+            "default": "MEDIUM"
+          },
+          "consentGiven": {
+            "type": "boolean",
+            "title": "Consentgiven",
+            "description": "Explicit consent for technical contact and data processing"
+          },
+          "privacyPolicyVersion": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "Privacypolicyversion",
+            "description": "Version of privacy policy acknowledged",
+            "default": "2026-v1"
+          },
+          "scanToken": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scantoken",
+            "description": "Associated single-page audit scan token"
+          },
+          "honeypot": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Honeypot",
+            "description": "Anti-spam honeypot field. Must remain empty."
+          }
+        },
+        "type": "object",
+        "required": [
+          "customerName",
+          "businessEmail",
+          "phoneNumber",
+          "websiteUrl",
+          "businessCategory",
+          "targetCity",
+          "requestedService",
+          "problemDescription",
+          "consentGiven"
+        ],
+        "title": "LeadSubmissionRequest",
+        "description": "Client-submitted SEO service inquiry payload."
+      },
+      "LeadUrgency": {
+        "type": "string",
+        "enum": [
+          "LOW",
+          "MEDIUM",
+          "HIGH",
+          "CRITICAL"
+        ],
+        "title": "LeadUrgency",
+        "description": "Urgency level specified by client inquiry."
+      },
+      "MarkdownExportResponse": {
+        "properties": {
+          "markdown": {
+            "type": "string",
+            "title": "Markdown",
+            "description": "Markdown report text."
+          }
+        },
+        "type": "object",
+        "required": [
+          "markdown"
+        ],
+        "title": "MarkdownExportResponse",
+        "description": "Container for exported Markdown verification report."
+      },
+      "ProvenanceCategory": {
+        "type": "string",
+        "enum": [
+          "DIRECT_OBSERVATION",
+          "EXTERNAL_MEASUREMENT",
+          "LICENSED_ESTIMATE",
+          "INTERNAL_COMPOSITE",
+          "USER_INPUT",
+          "AI_ASSISTED_DRAFT"
+        ],
+        "title": "ProvenanceCategory",
+        "description": "Data provenance classification taxonomy."
+      },
+      "ResolutionActionType": {
+        "type": "string",
+        "enum": [
+          "AUTOMATED_CODE_PATCH",
+          "HUMAN_DECISION_REQUIRED"
+        ],
+        "title": "ResolutionActionType",
+        "description": "Classification of resolution execution mode."
+      },
+      "ResolutionPlanDTO": {
+        "properties": {
+          "scanToken": {
+            "type": "string",
+            "title": "Scantoken",
+            "description": "Unique scan identifier from audit report."
+          },
+          "targetUrl": {
+            "type": "string",
+            "title": "Targeturl",
+            "description": "Audited target landing URL."
+          },
+          "totalIssues": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Totalissues",
+            "default": 0
+          },
+          "automatedCount": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Automatedcount",
+            "default": 0
+          },
+          "humanDecisionCount": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Humandecisioncount",
+            "default": 0
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/ResolutionTask"
+            },
+            "type": "array",
+            "title": "Tasks",
+            "description": "List of resolution tasks sorted by priority (Model E21)."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat",
+            "description": "Plan generation timestamp."
+          }
+        },
+        "type": "object",
+        "required": [
+          "scanToken",
+          "targetUrl"
+        ],
+        "title": "ResolutionPlanDTO",
+        "description": "Complete evidence-backed resolution plan covering all failing audit findings."
+      },
+      "ResolutionTask": {
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "title": "Taskid",
+            "description": "Unique resolution task identifier."
+          },
+          "ruleId": {
+            "type": "string",
+            "title": "Ruleid",
+            "description": "Target rule ID from audit findings."
+          },
+          "category": {
+            "$ref": "#/components/schemas/RuleCategory",
+            "description": "Audit taxonomic category."
+          },
+          "severity": {
+            "$ref": "#/components/schemas/IssueSeverity",
+            "description": "Impact severity rating."
+          },
+          "actionType": {
+            "$ref": "#/components/schemas/ResolutionActionType",
+            "description": "AUTOMATED_CODE_PATCH or HUMAN_DECISION_REQUIRED."
+          },
+          "priorityScore": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Priorityscore",
+            "description": "RICE-inspired priority score (Model E21)."
+          },
+          "triageScore": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Triagescore",
+            "description": "Root-cause triage composite (Model E20)."
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Concise task title."
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Comprehensive problem statement."
+          },
+          "targetSelector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetselector",
+            "description": "DOM selector or insertion path in rendered HTML."
+          },
+          "targetFilePath": {
+            "type": "string",
+            "title": "Targetfilepath",
+            "description": "Source code location. Explicitly UNKNOWN for public scans.",
+            "default": "UNKNOWN (Requires Repository Access)"
+          },
+          "proposedChange": {
+            "type": "string",
+            "title": "Proposedchange",
+            "description": "Exact summary of what should be inserted, removed, or changed."
+          },
+          "procedure": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Procedure",
+            "description": "Ordered step-by-step resolution procedure."
+          },
+          "expectedOutcome": {
+            "type": "string",
+            "title": "Expectedoutcome",
+            "description": "Deterministic test criteria confirming fix."
+          },
+          "risks": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Risks",
+            "description": "Potential technical side effects or caveats."
+          },
+          "rollbackInstructions": {
+            "type": "string",
+            "title": "Rollbackinstructions",
+            "description": "Exact operational procedure to revert proposed change."
+          },
+          "codePatch": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CodePatchProposal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Unified diff patch proposal if unambiguous."
+          },
+          "evidenceSnapshot": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Evidencesnapshot",
+            "description": "Verbatim evidence from original finding."
+          }
+        },
+        "type": "object",
+        "required": [
+          "taskId",
+          "ruleId",
+          "category",
+          "severity",
+          "actionType",
+          "priorityScore",
+          "triageScore",
+          "title",
+          "description",
+          "proposedChange",
+          "expectedOutcome",
+          "rollbackInstructions"
+        ],
+        "title": "ResolutionTask",
+        "description": "Actionable engineering resolution task with evidence-backed instructions."
+      },
+      "RobotsTxtSummaryDTO": {
+        "properties": {
+          "isPresent": {
+            "type": "boolean",
+            "title": "Ispresent",
+            "description": "True if /robots.txt exists with status 200."
+          },
+          "statusCode": {
+            "type": "integer",
+            "title": "Statuscode",
+            "description": "HTTP status code from /robots.txt fetch."
+          },
+          "sitemapUrls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sitemapurls",
+            "description": "Sitemap URLs declared in robots.txt."
+          },
+          "isTargetAllowed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Istargetallowed",
+            "description": "True if target path is permitted by robots.txt rules, False if blocked, None if absent."
+          },
+          "errorReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errorreason",
+            "description": "Error reason if fetch failed."
+          }
+        },
+        "type": "object",
+        "required": [
+          "isPresent",
+          "statusCode"
+        ],
+        "title": "RobotsTxtSummaryDTO",
+        "description": "Summary of robots.txt discovery and path permission evaluation."
+      },
+      "RuleCategory": {
+        "type": "string",
+        "enum": [
+          "CRAWLABILITY",
+          "INDEXABILITY",
+          "DOCUMENT",
+          "CONTENT",
+          "STRUCTURED",
+          "SECURITY"
+        ],
+        "title": "RuleCategory",
+        "description": "Taxonomic category of an audit rule."
+      },
+      "RuleState": {
+        "type": "string",
+        "enum": [
+          "PASS",
+          "FAIL",
+          "UNKNOWN",
+          "NOT_TESTED",
+          "NOT_APPLICABLE"
+        ],
+        "title": "RuleState",
+        "description": "The 5-state audit rule outcome model."
+      },
+      "ScanRequest": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Url",
+            "description": "Target webpage URL to audit (HTTP or HTTPS)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "ScanRequest",
+        "description": "Public scan request payload."
+      },
+      "ScanStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "IN_PROGRESS",
+          "COMPLETED",
+          "FAILED"
+        ],
+        "title": "ScanStatus",
+        "description": "Operational lifecycle state of a scan run."
+      },
+      "ScoreDeltaDTO": {
+        "properties": {
+          "baselineScore": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baselinescore"
+          },
+          "postChangeScore": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postchangescore"
+          },
+          "delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta",
+            "description": "postChangeScore - baselineScore, or None if either is unavailable."
+          }
+        },
+        "type": "object",
+        "title": "ScoreDeltaDTO",
+        "description": "Measurable change in score between baseline and post-change audits."
+      },
+      "ServiceBriefDTO": {
+        "properties": {
+          "briefId": {
+            "type": "string",
+            "title": "Briefid",
+            "description": "Unique service brief identifier"
+          },
+          "leadId": {
+            "type": "string",
+            "title": "Leadid",
+            "description": "Linked lead inquiry identifier"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generatedat",
+            "description": "Brief generation timestamp"
+          },
+          "clientDetails": {
+            "$ref": "#/components/schemas/ClientDetailsDTO"
+          },
+          "auditScope": {
+            "$ref": "#/components/schemas/AuditScopeDTO"
+          },
+          "criticalIssues": {
+            "items": {
+              "$ref": "#/components/schemas/CriticalIssueSummaryDTO"
+            },
+            "type": "array",
+            "title": "Criticalissues",
+            "description": "Verified CRITICAL and HIGH severity findings"
+          },
+          "proposedSolutions": {
+            "items": {
+              "$ref": "#/components/schemas/ResolutionTask"
+            },
+            "type": "array",
+            "title": "Proposedsolutions",
+            "description": "Actionable engineering resolution tasks with procedures and risks"
+          },
+          "implementationPriorities": {
+            "items": {
+              "$ref": "#/components/schemas/ResolutionTask"
+            },
+            "type": "array",
+            "title": "Implementationpriorities",
+            "description": "Tasks sorted by Model E21 RICE Priority"
+          },
+          "verificationSummary": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FindingComparisonDTO"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verificationsummary",
+            "description": "Before/after verification comparisons if re-scan is available"
+          },
+          "unknownAndUnavailableDisclosures": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unknownandunavailabledisclosures",
+            "description": "Explicit disclosures of data points not measured or unavailable"
+          },
+          "rankingDisclaimer": {
+            "type": "string",
+            "title": "Rankingdisclaimer",
+            "description": "Statutory legal and technical disclaimer regarding search engine rankings",
+            "default": "Google ranking and search engine placement are not guaranteed. Deterministic code resolutions and technical optimizations eliminate standards-compliance defects, crawling impediments, and indexation blockers; however, final SERP positions depend on proprietary external search algorithms, domain history, and competitor actions."
+          }
+        },
+        "type": "object",
+        "required": [
+          "briefId",
+          "leadId",
+          "generatedAt",
+          "clientDetails",
+          "auditScope"
+        ],
+        "title": "ServiceBriefDTO",
+        "description": "Complete evidence-backed consultation brief for SEO engineers and clients."
+      },
+      "SitemapSummaryDTO": {
+        "properties": {
+          "isSitemapFound": {
+            "type": "boolean",
+            "title": "Issitemapfound",
+            "description": "True if a valid XML sitemap was discovered."
+          },
+          "sitemapUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sitemapurl",
+            "description": "Primary sitemap URL evaluated."
+          },
+          "sitemapSource": {
+            "type": "string",
+            "title": "Sitemapsource",
+            "description": "Discovery source: ROBOTS_TXT | HTTP_HEADER | FALLBACK_ROOT | NONE",
+            "default": "NONE"
+          },
+          "totalUrlsSampled": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Totalurlssampled",
+            "description": "Count of URLs sampled from sitemap.",
+            "default": 0
+          },
+          "healthScore": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Healthscore",
+            "description": "Model E12 sitemap URL health percentage (0-100), or None if unavailable."
+          },
+          "errorReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errorreason",
+            "description": "Error reason if discovery or parsing failed."
+          }
+        },
+        "type": "object",
+        "required": [
+          "isSitemapFound"
+        ],
+        "title": "SitemapSummaryDTO",
+        "description": "Summary of XML sitemap discovery and Model E12 evaluation."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VerificationCompareRequest": {
+        "properties": {
+          "baselineReport": {
+            "$ref": "#/components/schemas/AuditReportDTO",
+            "description": "Baseline audit report snapshot."
+          },
+          "postChangeReport": {
+            "$ref": "#/components/schemas/AuditReportDTO",
+            "description": "Post-remediation audit report snapshot."
+          },
+          "attemptedRuleIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attemptedruleids",
+            "description": "Optional list of specific rule IDs attempted for remediation."
+          }
+        },
+        "type": "object",
+        "required": [
+          "baselineReport",
+          "postChangeReport"
+        ],
+        "title": "VerificationCompareRequest",
+        "description": "Payload for comparing baseline and post-change audits."
+      },
+      "VerificationReportDTO": {
+        "properties": {
+          "verificationId": {
+            "type": "string",
+            "title": "Verificationid",
+            "description": "Unique verification report identifier."
+          },
+          "targetUrl": {
+            "type": "string",
+            "title": "Targeturl",
+            "description": "Audited target URL."
+          },
+          "baselineScanToken": {
+            "type": "string",
+            "title": "Baselinescantoken",
+            "description": "Scan token of baseline audit."
+          },
+          "postChangeScanToken": {
+            "type": "string",
+            "title": "Postchangescantoken",
+            "description": "Scan token of post-change audit."
+          },
+          "verifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Verifiedat",
+            "description": "Verification execution timestamp."
+          },
+          "totalAttempted": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Totalattempted",
+            "description": "Count of attempted fix issues.",
+            "default": 0
+          },
+          "resolvedCount": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Resolvedcount",
+            "description": "Count of verified resolved issues.",
+            "default": 0
+          },
+          "unresolvedCount": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Unresolvedcount",
+            "description": "Count of persistent unresolved issues.",
+            "default": 0
+          },
+          "regressedCount": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Regressedcount",
+            "description": "Count of newly failing (regressed) issues.",
+            "default": 0
+          },
+          "unknownCount": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Unknowncount",
+            "description": "Count of checks that returned UNKNOWN.",
+            "default": 0
+          },
+          "notRecheckedCount": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Notrecheckedcount",
+            "description": "Count of checks not re-tested.",
+            "default": 0
+          },
+          "issueResolutionRate": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issueresolutionrate",
+            "description": "Model E33 Issue Resolution Rate percentage (0-100), or None if 0 attempted."
+          },
+          "overallScoreDelta": {
+            "$ref": "#/components/schemas/ScoreDeltaDTO",
+            "description": "Delta of overall SEO Health Score."
+          },
+          "completenessDelta": {
+            "$ref": "#/components/schemas/ScoreDeltaDTO",
+            "description": "Delta of report completeness index."
+          },
+          "categoryDeltas": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ScoreDeltaDTO"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/RuleCategory"
+            },
+            "type": "object",
+            "title": "Categorydeltas",
+            "description": "Per-category score deltas."
+          },
+          "findingComparisons": {
+            "items": {
+              "$ref": "#/components/schemas/FindingComparisonDTO"
+            },
+            "type": "array",
+            "title": "Findingcomparisons",
+            "description": "Itemized comparison of all audited rules."
+          },
+          "rulesetVersion": {
+            "type": "string",
+            "title": "Rulesetversion",
+            "description": "Ruleset version applied.",
+            "default": "1.0.0"
+          },
+          "scoringModelVersion": {
+            "type": "string",
+            "title": "Scoringmodelversion",
+            "description": "Scoring model version applied.",
+            "default": "1.0.0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "verificationId",
+          "targetUrl",
+          "baselineScanToken",
+          "postChangeScanToken",
+          "overallScoreDelta",
+          "completenessDelta"
+        ],
+        "title": "VerificationReportDTO",
+        "description": "Comprehensive post-deployment verification report comparing baseline and post-change audits."
+      },
+      "VerificationTransition": {
+        "type": "string",
+        "enum": [
+          "RESOLVED",
+          "UNRESOLVED",
+          "REGRESSED",
+          "PERSISTENT_PASS",
+          "UNKNOWN",
+          "NOT_RECHECKED"
+        ],
+        "title": "VerificationTransition",
+        "description": "Lifecycle transition state of a finding between baseline and post-change."
+      }
+    }
+  }
+}
