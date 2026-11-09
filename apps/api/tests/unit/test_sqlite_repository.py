@@ -116,7 +116,6 @@ def test_sqlite_rate_limiting_persists(temp_sqlite_repo):
     """Verifies that sliding window rate limit counts persist across repository restarts."""
     repo1, db_path = temp_sqlite_repo
     client_ip = "203.0.113.42"
-    email = "test@limit.com"
 
     for i in range(5):
         req = LeadSubmissionRequest(

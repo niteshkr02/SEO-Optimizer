@@ -35,9 +35,8 @@ class SQLiteLeadRepository(LeadRepositoryInterface):
         return conn
 
     def _init_db(self) -> None:
-        with self._lock:
-            with self._get_connection() as conn:
-                conn.executescript(
+        with self._lock, self._get_connection() as conn:
+            conn.executescript(
                     """
                     CREATE TABLE IF NOT EXISTS leads (
                         id TEXT PRIMARY KEY,
@@ -95,8 +94,8 @@ class SQLiteLeadRepository(LeadRepositoryInterface):
                         timestamp REAL NOT NULL
                     );
                     """
-                )
-                conn.commit()
+            )
+            conn.commit()
 
     def save_scan(self, report: AuditReportDTO) -> None:
         token = getattr(report, "scanToken", getattr(report, "scan_token", None))
@@ -135,9 +134,8 @@ class SQLiteLeadRepository(LeadRepositoryInterface):
         window = float(settings.LEAD_RATE_LIMIT_WINDOW_SECONDS)
         max_submissions = settings.LEAD_RATE_LIMIT_MAX_SUBMISSIONS
 
-        with self._lock:
-            with self._get_connection() as conn:
-                # 1. IP rate limit check
+        with self._lock, self._get_connection() as conn:
+            # 1. IP rate limit check
                 ip_key = f"ip:{client_ip}"
                 cursor = conn.execute(
                     "SELECT timestamps_json FROM rate_limits WHERE key = ?;",
@@ -209,9 +207,8 @@ class SQLiteLeadRepository(LeadRepositoryInterface):
             created_at=now_dt,
         )
 
-        with self._lock:
-            with self._get_connection() as conn:
-                # Update IP rate limits
+        with self._lock, self._get_connection() as conn:
+            # Update IP rate limits
                 ip_key = f"ip:{client_ip}"
                 cursor = conn.execute(
                     "SELECT timestamps_json FROM rate_limits WHERE key = ?;",
@@ -461,47 +458,46 @@ class SQLiteLeadRepository(LeadRepositoryInterface):
         now_iso = now_dt.isoformat()
         new_status_str = new_status.value if hasattr(new_status, "value") else str(new_status)
 
-        with self._lock:
-            with self._get_connection() as conn:
-                cursor = conn.execute("SELECT status FROM leads WHERE id = ?;", (lead_id,))
-                row = cursor.fetchone()
-                if not row:
-                    return None
+        with self._lock, self._get_connection() as conn:
+            cursor = conn.execute("SELECT status FROM leads WHERE id = ?;", (lead_id,))
+            row = cursor.fetchone()
+            if not row:
+                return None
 
-                prev_status_str = row["status"]
-                history_id = str(uuid.uuid4())
+            prev_status_str = row["status"]
+            history_id = str(uuid.uuid4())
 
-                # Insert status history item
-                conn.execute(
-                    """
-                    INSERT INTO lead_status_history (
-                        id, lead_id, previous_status, new_status, changed_by, notes, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?);
-                    """,
-                    (
-                        history_id,
-                        lead_id,
-                        prev_status_str,
-                        new_status_str,
-                        changed_by,
-                        notes,
-                        now_iso,
-                    ),
-                )
+            # Insert status history item
+            conn.execute(
+                """
+                INSERT INTO lead_status_history (
+                    id, lead_id, previous_status, new_status, changed_by, notes, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?);
+                """,
+                (
+                    history_id,
+                    lead_id,
+                    prev_status_str,
+                    new_status_str,
+                    changed_by,
+                    notes,
+                    now_iso,
+                ),
+            )
 
-                # Update lead status and updated_at
-                conn.execute(
-                    """
-                    UPDATE leads
-                    SET status = ?, updated_at = ?
-                    WHERE id = ?;
-                    """,
-                    (new_status_str, now_iso, lead_id),
-                )
-                conn.commit()
+            # Update lead status and updated_at
+            conn.execute(
+                """
+                UPDATE leads
+                SET status = ?, updated_at = ?
+                WHERE id = ?;
+                """,
+                (new_status_str, now_iso, lead_id),
+            )
+            conn.commit()
 
-                # Return updated lead
-                return self.get_lead(lead_id)
+            # Return updated lead
+            return self.get_lead(lead_id)
 
     def get_status_history(self, lead_id: str) -> list[LeadStatusHistoryDTO]:
         with self._lock, self._get_connection() as conn:
