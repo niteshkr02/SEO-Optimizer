@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { AdminLeadManagementView } from "../AdminLeadManagementView";
@@ -84,7 +84,46 @@ const mockBrief: apiClient.ServiceBriefDTO = {
 };
 
 describe("AdminLeadManagementView Component", () => {
-  it("renders pipeline filters and displays loaded leads", async () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("renders hardened login form when unauthenticated without exposing secrets", async () => {
+    vi.spyOn(apiClient, "checkAdminSession").mockResolvedValue({ authenticated: false });
+    const loginSpy = vi.spyOn(apiClient, "loginAdmin").mockResolvedValue({
+      authenticated: true,
+      username: "admin",
+      role: "admin",
+      csrf_token: "csrf-token-abc",
+    });
+
+    render(<AdminLeadManagementView />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Admin Authentication")).toBeDefined();
+      expect(screen.getByText(/Hardened Security Architecture/i)).toBeDefined();
+    });
+
+    // Fill in credentials and submit
+    fireEvent.change(screen.getByPlaceholderText("e.g. admin"), { target: { value: "admin" } });
+    fireEvent.change(screen.getByPlaceholderText("••••••••••••"), { target: { value: "secret123" } });
+    fireEvent.click(screen.getByRole("button", { name: /Sign In Securely/i }));
+
+    await waitFor(() => {
+      expect(loginSpy).toHaveBeenCalledWith({
+        username: "admin",
+        password: "secret123",
+      });
+    });
+  });
+
+  it("renders pipeline filters and displays loaded leads when authenticated", async () => {
+    vi.spyOn(apiClient, "checkAdminSession").mockResolvedValue({
+      authenticated: true,
+      username: "admin",
+      role: "admin",
+      csrf_token: "csrf-test-token",
+    });
     vi.spyOn(apiClient, "listLeads").mockResolvedValue({
       items: [mockLead],
       total: 1,
@@ -94,16 +133,21 @@ describe("AdminLeadManagementView Component", () => {
 
     render(<AdminLeadManagementView />);
 
-    expect(screen.getByText("Admin Lead & Consultation Center")).toBeDefined();
-    expect(screen.getByText("All Leads")).toBeDefined();
-
     await waitFor(() => {
+      expect(screen.getByText("Admin Lead & Consultation Center")).toBeDefined();
+      expect(screen.getByText("All Leads")).toBeDefined();
       expect(screen.getByText("Robert Vance")).toBeDefined();
       expect(screen.getByText("https://vance-refrigeration.com")).toBeDefined();
     });
   });
 
-  it("selects a lead and allows updating status", async () => {
+  it("selects a lead and allows updating status with CSRF protection", async () => {
+    vi.spyOn(apiClient, "checkAdminSession").mockResolvedValue({
+      authenticated: true,
+      username: "admin",
+      role: "admin",
+      csrf_token: "csrf-test-token",
+    });
     vi.spyOn(apiClient, "listLeads").mockResolvedValue({
       items: [mockLead],
       total: 1,
@@ -139,12 +183,18 @@ describe("AdminLeadManagementView Component", () => {
       expect(updateSpy).toHaveBeenCalledWith(
         "lead-admin-123",
         expect.objectContaining({ newStatus: "CONTACTED" }),
-        expect.any(String)
+        expect.objectContaining({ csrfToken: "csrf-test-token" })
       );
     });
   });
 
   it("loads and displays consultation brief with statutory disclaimer", async () => {
+    vi.spyOn(apiClient, "checkAdminSession").mockResolvedValue({
+      authenticated: true,
+      username: "admin",
+      role: "admin",
+      csrf_token: "csrf-test-token",
+    });
     vi.spyOn(apiClient, "listLeads").mockResolvedValue({
       items: [mockLead],
       total: 1,
@@ -161,8 +211,8 @@ describe("AdminLeadManagementView Component", () => {
 
     fireEvent.click(screen.getByText("Robert Vance"));
 
-    // Switch to Consultation Brief tab
-    const briefTab = screen.getByText(/Consultation Brief/i);
+    // Switch to Service Brief tab
+    const briefTab = screen.getByText("Service Brief");
     fireEvent.click(briefTab);
 
     await waitFor(() => {

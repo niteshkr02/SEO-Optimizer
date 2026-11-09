@@ -70,3 +70,4 @@ class LeadRepositoryInterface(Protocol):
     def reset(self) -> None:
         """Clears or resets state for test isolation."""
         ...
+

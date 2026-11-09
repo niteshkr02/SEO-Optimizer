@@ -39,3 +39,4 @@ def create_lead_repository(
     # Default to durable SQLite
     logger.info("Initializing SQLiteLeadRepository adapter at %s", db_path or settings.SQLITE_DB_PATH)
     return SQLiteLeadRepository(db_path=db_path or settings.SQLITE_DB_PATH)
+

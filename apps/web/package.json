@@ -4,7 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -14,6 +13,8 @@
     "codegen:api": "openapi-typescript ../../contracts/openapi_v1.json -o src/lib/api/schema.d.ts"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.119.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.475.0",
     "next": "15.1.7",

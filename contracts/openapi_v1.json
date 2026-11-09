@@ -30,6 +30,92 @@
         }
       }
     },
+    "/api/v1/auth/admin/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Administrator login",
+        "description": "Authenticates admin credentials, sets an HttpOnly session cookie, and returns a CSRF token.",
+        "operationId": "admin_login_api_v1_auth_admin_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/admin/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Administrator logout",
+        "description": "Clears the HttpOnly admin session cookie.",
+        "operationId": "admin_logout_api_v1_auth_admin_logout_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSessionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/admin/session": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Check administrator session",
+        "description": "Checks whether the caller has an active, valid administrative session.",
+        "operationId": "admin_session_api_v1_auth_admin_session_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSessionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/scan": {
       "post": {
         "tags": [
@@ -419,6 +505,22 @@
               ],
               "title": "Authorization"
             }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
           }
         ],
         "responses": {
@@ -494,6 +596,22 @@
               ],
               "title": "Authorization"
             }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
           }
         ],
         "responses": {
@@ -568,6 +686,22 @@
                 }
               ],
               "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
             }
           }
         ],
@@ -654,6 +788,22 @@
               ],
               "title": "Authorization"
             }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
           }
         ],
         "responses": {
@@ -733,6 +883,22 @@
               ],
               "title": "Authorization"
             }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
           }
         ],
         "responses": {
@@ -808,6 +974,22 @@
               ],
               "title": "Authorization"
             }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
           }
         ],
         "responses": {
@@ -881,6 +1063,22 @@
               ],
               "title": "Authorization"
             }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
           }
         ],
         "responses": {
@@ -908,6 +1106,78 @@
   },
   "components": {
     "schemas": {
+      "AdminLoginRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Username",
+            "description": "Administrator username"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Password",
+            "description": "Administrator password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "AdminLoginRequest",
+        "description": "Admin login credentials payload."
+      },
+      "AdminSessionResponse": {
+        "properties": {
+          "authenticated": {
+            "type": "boolean",
+            "title": "Authenticated"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "csrf_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Csrf Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "authenticated"
+        ],
+        "title": "AdminSessionResponse",
+        "description": "Admin session status and CSRF token response."
+      },
       "AuditReportDTO": {
         "properties": {
           "scanToken": {
