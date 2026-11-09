@@ -1,6 +1,6 @@
 """Runtime application settings using Pydantic Settings."""
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -101,9 +101,38 @@ class Settings(BaseSettings):
         default=None,
         description="Supabase service role secret key (server-only, never expose to clients)",
     )
+    SUPABASE_SECRET_KEY: str | None = Field(
+        default=None,
+        description="Supabase secret key (new sb_secret_... format, server-only)",
+    )
+    SUPABASE_PUBLISHABLE_KEY: str | None = Field(
+        default=None,
+        description="Supabase publishable key (sb_publishable_...)",
+    )
+    SUPABASE_JWKS_URL: str | None = Field(
+        default=None,
+        description="Supabase JWKS URL for JWT validation",
+    )
+    DATABASE_URL: str | None = Field(
+        default=None,
+        description="PostgreSQL database connection URL",
+    )
+    DIRECT_URL: str | None = Field(
+        default=None,
+        description="Direct PostgreSQL connection URL",
+    )
     LEAD_RATE_LIMIT_MAX_SUBMISSIONS: int = 5
     LEAD_RATE_LIMIT_WINDOW_SECONDS: int = 600
     LEAD_DUPLICATE_WINDOW_SECONDS: int = 60
+
+    @model_validator(mode="after")
+    def enforce_production_cookie_security(self) -> "Settings":
+        """Enforces HTTPS Secure flag on session cookies in production and resolves Supabase keys."""
+        if self.ENVIRONMENT == "production" and not self.COOKIE_SECURE:
+            object.__setattr__(self, "COOKIE_SECURE", True)
+        if not self.SUPABASE_SERVICE_ROLE_KEY and self.SUPABASE_SECRET_KEY:
+            object.__setattr__(self, "SUPABASE_SERVICE_ROLE_KEY", self.SUPABASE_SECRET_KEY)
+        return self
 
 
 settings = Settings()

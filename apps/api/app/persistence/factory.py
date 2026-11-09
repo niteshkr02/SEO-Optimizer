@@ -26,9 +26,17 @@ def create_lead_repository(
         if url and key:
             logger.info("Initializing SupabaseLeadRepository adapter")
             return SupabaseLeadRepository(supabase_url=url, service_role_key=key)
+
+        if settings.ENVIRONMENT == "production":
+            raise RuntimeError(
+                "Production startup failure: PERSISTENCE_BACKEND is set to 'supabase' but "
+                "SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY are not configured. "
+                "Refusing silent fallback to local SQLite in production environment."
+            )
+
         logger.warning(
             "Supabase credentials missing (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY). "
-            "Falling back to durable SQLite repository."
+            "Falling back to durable SQLite repository for non-production environment."
         )
         return SQLiteLeadRepository(db_path=db_path or settings.SQLITE_DB_PATH)
 
@@ -37,6 +45,12 @@ def create_lead_repository(
         return InMemoryLeadRepository()
 
     # Default to durable SQLite
+    if settings.ENVIRONMENT == "production":
+        logger.warning(
+            "OPERATIONAL NOTICE: Using SQLiteLeadRepository in production environment. "
+            "SQLite is designed for single-instance or local execution and does not support "
+            "horizontal scaling or distributed cluster state."
+        )
     logger.info("Initializing SQLiteLeadRepository adapter at %s", db_path or settings.SQLITE_DB_PATH)
     return SQLiteLeadRepository(db_path=db_path or settings.SQLITE_DB_PATH)
 

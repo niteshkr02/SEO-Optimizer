@@ -23,8 +23,13 @@ class LeadRepositoryInterface(Protocol):
         """Retrieves an audit report by scan token."""
         ...
 
-    def check_rate_limit(self, client_ip: str, email: str) -> tuple[bool, str]:
-        """Checks sliding-window rate limit for a client IP and business email."""
+    def check_rate_limit(
+        self,
+        client_ip: str,
+        email: str,
+        record: bool = False,
+    ) -> tuple[bool, str]:
+        """Checks and optionally atomically records sliding-window rate limit for a client IP and business email."""
         ...
 
     def check_duplicate_submission(self, email: str, website_url: str) -> bool:

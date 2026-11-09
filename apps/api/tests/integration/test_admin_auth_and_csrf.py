@@ -213,3 +213,63 @@ async def test_admin_logout_clears_session():
         # Cookie deleted/expired
         deleted_cookie = logout_resp.cookies.get("admin_session")
         assert deleted_cookie is None or deleted_cookie == '""'
+
+
+@pytest.mark.asyncio
+async def test_admin_login_rate_limiting_after_repeated_failures():
+    """Verifies that 5 failed login attempts trigger HTTP 429 LOGIN_RATE_LIMIT_EXCEEDED."""
+    from app.api.v1.endpoints.auth import reset_login_failures
+    reset_login_failures("127.0.0.1")
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        # Submit 5 incorrect login attempts
+        for _ in range(5):
+            fail_resp = await client.post(
+                "/api/v1/auth/admin/login",
+                json={"username": "admin", "password": "wrong-password"},
+            )
+            assert fail_resp.status_code == 401
+
+        # 6th attempt must be blocked by rate limiter
+        blocked_resp = await client.post(
+            "/api/v1/auth/admin/login",
+            json={"username": "admin", "password": "wrong-password"},
+        )
+        assert blocked_resp.status_code == 429
+        assert blocked_resp.json()["detail"]["code"] == "LOGIN_RATE_LIMIT_EXCEEDED"
+
+    # Reset afterwards for test hygiene
+    reset_login_failures("127.0.0.1")
+
+
+@pytest.mark.asyncio
+async def test_admin_expired_session_rejection():
+    """Verifies that expired HMAC session cookies are rejected with 401 SESSION_EXPIRED."""
+    import base64
+    import hashlib
+    import hmac
+    import json
+    import time
+
+    now = int(time.time()) - 1000  # 1000 seconds in the past
+    payload = {"sub": "admin", "role": "admin", "iat": now - 3600, "exp": now}
+    payload_json = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    payload_b64 = base64.urlsafe_b64encode(payload_json).decode("utf-8").rstrip("=")
+    sig = hmac.new(
+        settings.ADMIN_SESSION_SECRET.encode("utf-8"),
+        payload_b64.encode("utf-8"),
+        hashlib.sha256,
+    ).digest()
+    sig_b64 = base64.urlsafe_b64encode(sig).decode("utf-8").rstrip("=")
+    expired_token = f"{payload_b64}.{sig_b64}"
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        resp = await client.get("/api/v1/leads", cookies={"admin_session": expired_token})
+
+    assert resp.status_code == 401
+    assert resp.json()["detail"]["code"] == "SESSION_EXPIRED"
+

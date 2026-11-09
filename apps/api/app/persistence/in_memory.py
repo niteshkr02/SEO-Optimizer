@@ -37,7 +37,12 @@ class InMemoryLeadRepository(LeadRepositoryInterface):
         with self._lock:
             return self._scans.get(scan_token)
 
-    def check_rate_limit(self, client_ip: str, email: str) -> tuple[bool, str]:
+    def check_rate_limit(
+        self,
+        client_ip: str,
+        email: str,
+        record: bool = False,
+    ) -> tuple[bool, str]:
         now = time.time()
         window = float(settings.LEAD_RATE_LIMIT_WINDOW_SECONDS)
         max_submissions = settings.LEAD_RATE_LIMIT_MAX_SUBMISSIONS
@@ -47,12 +52,17 @@ class InMemoryLeadRepository(LeadRepositoryInterface):
             ip_history = [t for t in self._rate_limits.get(ip_key, []) if now - t < window]
             if len(ip_history) >= max_submissions:
                 return False, f"Too many inquiries from IP {client_ip}. Limit is {max_submissions} per {int(window / 60)} minutes."
-            self._rate_limits[ip_key] = ip_history
 
             email_key = f"email:{email.lower().strip()}"
             email_history = [t for t in self._rate_limits.get(email_key, []) if now - t < window]
             if len(email_history) >= max_submissions:
                 return False, f"Too many inquiries from email {email}. Limit is {max_submissions} per {int(window / 60)} minutes."
+
+            if record:
+                ip_history.append(now)
+                email_history.append(now)
+
+            self._rate_limits[ip_key] = ip_history
             self._rate_limits[email_key] = email_history
 
             return True, ""

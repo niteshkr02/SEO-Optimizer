@@ -66,12 +66,15 @@ CREATE TABLE IF NOT EXISTS public.rate_limits (
 
 -- 5. Automatic updated_at Trigger for leads
 CREATE OR REPLACE FUNCTION public.update_leads_updated_at()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 DROP TRIGGER IF EXISTS trg_update_leads_updated_at ON public.leads;
 CREATE TRIGGER trg_update_leads_updated_at
@@ -140,12 +143,12 @@ CREATE POLICY "staff_admin_only_leads"
     FOR ALL
     TO authenticated
     USING (
-        (auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'engineer')
-        OR (auth.jwt() ->> 'role') = 'service_role'
+        ((select auth.jwt()) -> 'app_metadata' ->> 'role') IN ('admin', 'engineer')
+        OR ((select auth.jwt()) ->> 'role') = 'service_role'
     )
     WITH CHECK (
-        (auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'engineer')
-        OR (auth.jwt() ->> 'role') = 'service_role'
+        ((select auth.jwt()) -> 'app_metadata' ->> 'role') IN ('admin', 'engineer')
+        OR ((select auth.jwt()) ->> 'role') = 'service_role'
     );
 
 DROP POLICY IF EXISTS "staff_admin_only_history" ON public.lead_status_history;
@@ -154,12 +157,12 @@ CREATE POLICY "staff_admin_only_history"
     FOR ALL
     TO authenticated
     USING (
-        (auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'engineer')
-        OR (auth.jwt() ->> 'role') = 'service_role'
+        ((select auth.jwt()) -> 'app_metadata' ->> 'role') IN ('admin', 'engineer')
+        OR ((select auth.jwt()) ->> 'role') = 'service_role'
     )
     WITH CHECK (
-        (auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'engineer')
-        OR (auth.jwt() ->> 'role') = 'service_role'
+        ((select auth.jwt()) -> 'app_metadata' ->> 'role') IN ('admin', 'engineer')
+        OR ((select auth.jwt()) ->> 'role') = 'service_role'
     );
 
 -- 7.3 Service Role (Backend internal worker bypass)

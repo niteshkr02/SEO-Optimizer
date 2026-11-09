@@ -129,45 +129,71 @@ class SQLiteLeadRepository(LeadRepositoryInterface):
                 return None
             return AuditReportDTO.model_validate_json(row["report_json"])
 
-    def check_rate_limit(self, client_ip: str, email: str) -> tuple[bool, str]:
+    def check_rate_limit(
+        self,
+        client_ip: str,
+        email: str,
+        record: bool = False,
+    ) -> tuple[bool, str]:
         now = time.time()
         window = float(settings.LEAD_RATE_LIMIT_WINDOW_SECONDS)
         max_submissions = settings.LEAD_RATE_LIMIT_MAX_SUBMISSIONS
 
         with self._lock, self._get_connection() as conn:
             # 1. IP rate limit check
-                ip_key = f"ip:{client_ip}"
-                cursor = conn.execute(
-                    "SELECT timestamps_json FROM rate_limits WHERE key = ?;",
-                    (ip_key,),
+            ip_key = f"ip:{client_ip}"
+            cursor = conn.execute(
+                "SELECT timestamps_json FROM rate_limits WHERE key = ?;",
+                (ip_key,),
+            )
+            row = cursor.fetchone()
+            ip_history: list[float] = json.loads(row["timestamps_json"]) if row else []
+            ip_history = [t for t in ip_history if now - t < window]
+
+            if len(ip_history) >= max_submissions:
+                return (
+                    False,
+                    f"Too many inquiries from IP {client_ip}. Limit is {max_submissions} per {int(window / 60)} minutes.",
                 )
-                row = cursor.fetchone()
-                ip_history: list[float] = json.loads(row["timestamps_json"]) if row else []
-                ip_history = [t for t in ip_history if now - t < window]
 
-                if len(ip_history) >= max_submissions:
-                    return (
-                        False,
-                        f"Too many inquiries from IP {client_ip}. Limit is {max_submissions} per {int(window / 60)} minutes.",
-                    )
+            # 2. Email rate limit check
+            email_key = f"email:{email.lower().strip()}"
+            cursor = conn.execute(
+                "SELECT timestamps_json FROM rate_limits WHERE key = ?;",
+                (email_key,),
+            )
+            row = cursor.fetchone()
+            email_history: list[float] = json.loads(row["timestamps_json"]) if row else []
+            email_history = [t for t in email_history if now - t < window]
 
-                # 2. Email rate limit check
-                email_key = f"email:{email.lower().strip()}"
-                cursor = conn.execute(
-                    "SELECT timestamps_json FROM rate_limits WHERE key = ?;",
-                    (email_key,),
+            if len(email_history) >= max_submissions:
+                return (
+                    False,
+                    f"Too many inquiries from email {email}. Limit is {max_submissions} per {int(window / 60)} minutes.",
                 )
-                row = cursor.fetchone()
-                email_history: list[float] = json.loads(row["timestamps_json"]) if row else []
-                email_history = [t for t in email_history if now - t < window]
 
-                if len(email_history) >= max_submissions:
-                    return (
-                        False,
-                        f"Too many inquiries from email {email}. Limit is {max_submissions} per {int(window / 60)} minutes.",
-                    )
+            if record:
+                ip_history.append(now)
+                email_history.append(now)
+                conn.execute(
+                    """
+                    INSERT INTO rate_limits (key, timestamps_json)
+                    VALUES (?, ?)
+                    ON CONFLICT(key) DO UPDATE SET timestamps_json = excluded.timestamps_json;
+                    """,
+                    (ip_key, json.dumps(ip_history)),
+                )
+                conn.execute(
+                    """
+                    INSERT INTO rate_limits (key, timestamps_json)
+                    VALUES (?, ?)
+                    ON CONFLICT(key) DO UPDATE SET timestamps_json = excluded.timestamps_json;
+                    """,
+                    (email_key, json.dumps(email_history)),
+                )
+                conn.commit()
 
-                return True, ""
+            return True, ""
 
     def check_duplicate_submission(self, email: str, website_url: str) -> bool:
         now = time.time()
@@ -209,104 +235,104 @@ class SQLiteLeadRepository(LeadRepositoryInterface):
 
         with self._lock, self._get_connection() as conn:
             # Update IP rate limits
-                ip_key = f"ip:{client_ip}"
-                cursor = conn.execute(
-                    "SELECT timestamps_json FROM rate_limits WHERE key = ?;",
-                    (ip_key,),
-                )
-                row = cursor.fetchone()
-                ip_history: list[float] = json.loads(row["timestamps_json"]) if row else []
-                ip_history.append(now_ts)
-                conn.execute(
-                    """
-                    INSERT INTO rate_limits (key, timestamps_json)
-                    VALUES (?, ?)
-                    ON CONFLICT(key) DO UPDATE SET timestamps_json = excluded.timestamps_json;
-                    """,
-                    (ip_key, json.dumps(ip_history)),
-                )
+            ip_key = f"ip:{client_ip}"
+            cursor = conn.execute(
+                "SELECT timestamps_json FROM rate_limits WHERE key = ?;",
+                (ip_key,),
+            )
+            row = cursor.fetchone()
+            ip_history: list[float] = json.loads(row["timestamps_json"]) if row else []
+            ip_history.append(now_ts)
+            conn.execute(
+                """
+                INSERT INTO rate_limits (key, timestamps_json)
+                VALUES (?, ?)
+                ON CONFLICT(key) DO UPDATE SET timestamps_json = excluded.timestamps_json;
+                """,
+                (ip_key, json.dumps(ip_history)),
+            )
 
-                # Update Email rate limits
-                email_key = f"email:{req.business_email.lower().strip()}"
-                cursor = conn.execute(
-                    "SELECT timestamps_json FROM rate_limits WHERE key = ?;",
-                    (email_key,),
-                )
-                row = cursor.fetchone()
-                email_history: list[float] = json.loads(row["timestamps_json"]) if row else []
-                email_history.append(now_ts)
-                conn.execute(
-                    """
-                    INSERT INTO rate_limits (key, timestamps_json)
-                    VALUES (?, ?)
-                    ON CONFLICT(key) DO UPDATE SET timestamps_json = excluded.timestamps_json;
-                    """,
-                    (email_key, json.dumps(email_history)),
-                )
+            # Update Email rate limits
+            email_key = f"email:{req.business_email.lower().strip()}"
+            cursor = conn.execute(
+                "SELECT timestamps_json FROM rate_limits WHERE key = ?;",
+                (email_key,),
+            )
+            row = cursor.fetchone()
+            email_history: list[float] = json.loads(row["timestamps_json"]) if row else []
+            email_history.append(now_ts)
+            conn.execute(
+                """
+                INSERT INTO rate_limits (key, timestamps_json)
+                VALUES (?, ?)
+                ON CONFLICT(key) DO UPDATE SET timestamps_json = excluded.timestamps_json;
+                """,
+                (email_key, json.dumps(email_history)),
+            )
 
-                # Update duplicate submissions
-                dup_key = f"{req.business_email.lower().strip()}:{req.website_url.strip()}"
-                conn.execute(
-                    """
-                    INSERT INTO recent_submissions (key, timestamp)
-                    VALUES (?, ?)
-                    ON CONFLICT(key) DO UPDATE SET timestamp = excluded.timestamp;
-                    """,
-                    (dup_key, now_ts),
-                )
+            # Update duplicate submissions
+            dup_key = f"{req.business_email.lower().strip()}:{req.website_url.strip()}"
+            conn.execute(
+                """
+                INSERT INTO recent_submissions (key, timestamp)
+                VALUES (?, ?)
+                ON CONFLICT(key) DO UPDATE SET timestamp = excluded.timestamp;
+                """,
+                (dup_key, now_ts),
+            )
 
-                tech_stack = getattr(req, "tech_stack", None)
-                # Insert lead record
-                conn.execute(
-                    """
-                    INSERT INTO leads (
-                        id, scan_token, customer_name, business_email, phone_number,
-                        website_url, business_category, target_city, requested_service,
-                        problem_description, urgency, status, consent_given,
-                        consent_timestamp, privacy_policy_version, tech_stack,
-                        created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-                    """,
-                    (
-                        lead_id,
-                        req.scan_token,
-                        req.customer_name,
-                        req.business_email,
-                        req.phone_number,
-                        req.website_url,
-                        req.business_category,
-                        req.target_city,
-                        req.requested_service,
-                        req.problem_description,
-                        req.urgency.value if hasattr(req.urgency, "value") else str(req.urgency),
-                        LeadStatus.NEW.value,
-                        1 if req.consent_given else 0,
-                        now_iso,
-                        req.privacy_policy_version,
-                        json.dumps(tech_stack) if tech_stack else None,
-                        now_iso,
-                        now_iso,
-                    ),
-                )
+            tech_stack = getattr(req, "tech_stack", None)
+            # Insert lead record
+            conn.execute(
+                """
+                INSERT INTO leads (
+                    id, scan_token, customer_name, business_email, phone_number,
+                    website_url, business_category, target_city, requested_service,
+                    problem_description, urgency, status, consent_given,
+                    consent_timestamp, privacy_policy_version, tech_stack,
+                    created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                """,
+                (
+                    lead_id,
+                    req.scan_token,
+                    req.customer_name,
+                    req.business_email,
+                    req.phone_number,
+                    req.website_url,
+                    req.business_category,
+                    req.target_city,
+                    req.requested_service,
+                    req.problem_description,
+                    req.urgency.value if hasattr(req.urgency, "value") else str(req.urgency),
+                    LeadStatus.NEW.value,
+                    1 if req.consent_given else 0,
+                    now_iso,
+                    req.privacy_policy_version,
+                    json.dumps(tech_stack) if tech_stack else None,
+                    now_iso,
+                    now_iso,
+                ),
+            )
 
-                # Insert initial status history
-                conn.execute(
-                    """
-                    INSERT INTO lead_status_history (
-                        id, lead_id, previous_status, new_status, changed_by, notes, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?);
-                    """,
-                    (
-                        history_id,
-                        lead_id,
-                        None,
-                        LeadStatus.NEW.value,
-                        "Public Website Form",
-                        "Inquiry submitted via public web funnel",
-                        now_iso,
-                    ),
-                )
-                conn.commit()
+            # Insert initial status history
+            conn.execute(
+                """
+                INSERT INTO lead_status_history (
+                    id, lead_id, previous_status, new_status, changed_by, notes, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?);
+                """,
+                (
+                    history_id,
+                    lead_id,
+                    None,
+                    LeadStatus.NEW.value,
+                    "Public Website Form",
+                    "Inquiry submitted via public web funnel",
+                    now_iso,
+                ),
+            )
+            conn.commit()
 
         return LeadDTO(
             id=lead_id,
