@@ -1,5 +1,7 @@
 """Supabase PostgreSQL repository adapter using PostgREST endpoints and server-only credentials."""
 
+import logging
+import re
 import time
 import uuid
 from datetime import UTC, datetime
@@ -16,6 +18,8 @@ from app.contracts.lead import (
 from app.contracts.scan import AuditReportDTO
 from app.core.config import settings
 from app.persistence.interface import LeadRepositoryInterface
+
+logger = logging.getLogger(__name__)
 
 
 class SupabaseLeadRepository(LeadRepositoryInterface):
@@ -65,23 +69,86 @@ class SupabaseLeadRepository(LeadRepositoryInterface):
     def get_scan(self, scan_token: str) -> AuditReportDTO | None:
         return self._scans_cache.get(scan_token)
 
-    def check_rate_limit(self, client_ip: str, email: str) -> tuple[bool, str]:
+    def check_rate_limit(
+        self,
+        client_ip: str,
+        email: str,
+        record: bool = False,
+    ) -> tuple[bool, str]:
         now = time.time()
         window = float(settings.LEAD_RATE_LIMIT_WINDOW_SECONDS)
         max_submissions = settings.LEAD_RATE_LIMIT_MAX_SUBMISSIONS
 
+        ip_key = f"ip:{client_ip}"
+        email_key = f"email:{email.lower().strip()}"
+
         with self._client() as client:
-            # Query rate limits table
-            resp = client.get("/rate_limits", params={"rate_key": f"in.(ip:{client_ip},email:{email.lower().strip()})"})
+            # 1. Attempt atomic RPC check_and_record_rate_limit
+            try:
+                ip_resp = client.post(
+                    "/rpc/check_and_record_rate_limit",
+                    json={
+                        "p_rate_key": ip_key,
+                        "p_now": now,
+                        "p_window_seconds": window,
+                        "p_max_submissions": max_submissions,
+                        "p_record": record,
+                    },
+                )
+                if ip_resp.status_code == 200:
+                    if not ip_resp.json():
+                        return (
+                            False,
+                            f"Too many inquiries from IP {client_ip}. Limit is {max_submissions} per {int(window / 60)} minutes.",
+                        )
+
+                    email_resp = client.post(
+                        "/rpc/check_and_record_rate_limit",
+                        json={
+                            "p_rate_key": email_key,
+                            "p_now": now,
+                            "p_window_seconds": window,
+                            "p_max_submissions": max_submissions,
+                            "p_record": record,
+                        },
+                    )
+                    if email_resp.status_code == 200:
+                        if not email_resp.json():
+                            return (
+                                False,
+                                f"Too many inquiries from email {email}. Limit is {max_submissions} per {int(window / 60)} minutes.",
+                            )
+                        return True, ""
+            except httpx.HTTPError as exc:
+                logger.warning(
+                    "Error calling check_and_record_rate_limit RPC: %s; falling back to table query",
+                    exc,
+                )
+
+            # Fallback to query rate limits table if RPC is not provisioned or failed
+            resp = client.get(
+                "/rate_limits",
+                params={"rate_key": f"in.(ip:{client_ip},email:{email.lower().strip()})"},
+            )
             if resp.status_code == 200:
                 rows = resp.json()
                 for row in rows:
                     key = row.get("rate_key", "")
-                    ts_list = [float(t) for t in row.get("timestamps", []) if now - float(t) < window]
+                    ts_list = [
+                        float(t)
+                        for t in row.get("timestamps", [])
+                        if now - float(t) < window
+                    ]
                     if len(ts_list) >= max_submissions:
                         if key.startswith("ip:"):
-                            return False, f"Too many inquiries from IP {client_ip}. Limit is {max_submissions} per {int(window / 60)} minutes."
-                        return False, f"Too many inquiries from email {email}. Limit is {max_submissions} per {int(window / 60)} minutes."
+                            return (
+                                False,
+                                f"Too many inquiries from IP {client_ip}. Limit is {max_submissions} per {int(window / 60)} minutes.",
+                            )
+                        return (
+                            False,
+                            f"Too many inquiries from email {email}. Limit is {max_submissions} per {int(window / 60)} minutes.",
+                        )
 
         return True, ""
 
@@ -131,19 +198,38 @@ class SupabaseLeadRepository(LeadRepositoryInterface):
         )
 
         with self._client() as client:
-            # 1. Update distributed rate limits
+            # 1. Update distributed rate limits atomically via RPC
             ip_key = f"ip:{client_ip}"
             email_key = f"email:{req.business_email.lower().strip()}"
             for k in [ip_key, email_key]:
-                r = client.get("/rate_limits", params={"rate_key": f"eq.{k}"})
-                existing = r.json() if r.status_code == 200 and r.json() else []
-                current_ts = existing[0].get("timestamps", []) if existing else []
-                current_ts.append(now_ts)
-                client.post(
-                    "/rate_limits",
-                    headers={"Prefer": "resolution=merge-duplicates"},
-                    json={"rate_key": k, "timestamps": current_ts, "updated_at": now_iso},
-                )
+                recorded = False
+                try:
+                    rpc_resp = client.post(
+                        "/rpc/check_and_record_rate_limit",
+                        json={
+                            "p_rate_key": k,
+                            "p_now": now_ts,
+                            "p_window_seconds": float(settings.LEAD_RATE_LIMIT_WINDOW_SECONDS),
+                            "p_max_submissions": settings.LEAD_RATE_LIMIT_MAX_SUBMISSIONS,
+                            "p_record": True,
+                        },
+                    )
+                    if rpc_resp.status_code == 200:
+                        recorded = True
+                except httpx.HTTPError as exc:
+                    logger.warning("Atomic RPC call in create_lead failed for key %s: %s", k, exc)
+
+                if not recorded:
+                    # Fallback to merge-duplicates if RPC not yet provisioned
+                    r = client.get("/rate_limits", params={"rate_key": f"eq.{k}"})
+                    existing = r.json() if r.status_code == 200 and r.json() else []
+                    current_ts = existing[0].get("timestamps", []) if existing else []
+                    current_ts.append(now_ts)
+                    client.post(
+                        "/rate_limits",
+                        headers={"Prefer": "resolution=merge-duplicates"},
+                        json={"rate_key": k, "timestamps": current_ts, "updated_at": now_iso},
+                    )
 
             # 2. Insert Lead
             lead_payload = {
@@ -271,11 +357,13 @@ class SupabaseLeadRepository(LeadRepositoryInterface):
             params["status"] = f"eq.{status.value if hasattr(status, 'value') else str(status)}"
 
         if search and search.strip():
-            q = search.strip()
-            params["or"] = (
-                f"(customer_name.ilike.*{q}*,business_email.ilike.*{q}*,"
-                f"website_url.ilike.*{q}*,target_city.ilike.*{q}*,business_category.ilike.*{q}*)"
-            )
+            # Sanitize search term to prevent PostgREST grammar breakdown on commas and parentheses
+            clean_q = re.sub(r'[,()"]', " ", search).strip()
+            if clean_q:
+                params["or"] = (
+                    f"(customer_name.ilike.*{clean_q}*,business_email.ilike.*{clean_q}*,"
+                    f"website_url.ilike.*{clean_q}*,target_city.ilike.*{clean_q}*,business_category.ilike.*{clean_q}*)"
+                )
 
         headers = dict(self._headers)
         headers["Prefer"] = "count=exact"
