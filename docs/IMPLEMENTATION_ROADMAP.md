@@ -166,6 +166,26 @@ Every mathematical model documented in `docs/MATHEMATICAL_MODEL_CATALOG.md` is a
 
 ---
 
+## 3.4 Phase 2: WP 2.1 Multi-Page Asynchronous Website Crawler (Delivered)
+
+### 3.4.1 Work Package 2.1 Scope & Verification
+- **URL Normalization**: Canonical normalization (`normalize_url`) handling trailing slashes, redundant slashes, default ports (:80, :443), relative links resolution, tracking parameter stripping (`utm_*`, `gclid`, `fbclid`), query parameter sorting, and fragment stripping.
+- **RFC 9309 Robots.txt Verification**: Comprehensive path directive matching with 5 distinct outcome states (`ALLOWED`, `DISALLOWED`, `ABSENT_ALLOWED`, `UNREACHABLE_ALLOWED`, `INVALID_ALLOWED`).
+- **XML Sitemap Link Ingestion**: Samples canonical URLs from discovered sitemaps into the initial crawl frontier.
+- **Breadth-First Search (BFS) Frontier Engine**: Ordered queue progression bounded by polite concurrency (`max_concurrency = 2`, `request_delay_seconds = 0.25s`) and strict page ceiling limit enforcement.
+- **Zero-Trust SSRF Safety**: Continuous IP validation and DNS re-checking before every page fetch.
+- **Continuous 20-Rule SEO Auditing**: Evaluates all canonical SEO rules on every crawled page without heuristic approximation or LLM hallucination.
+- **Pure Deterministic Site Aggregation**: Computes unweighted arithmetic mean site-wide scores ($S_{\text{site}}$, $S_{c,\text{site}}$, $C_{\text{site}}$) and deduplicated unique issues sorted by severity and impact percentage.
+- **Six-State Job Lifecycle**: Robust background execution management supporting `QUEUED`, `RUNNING`, `COMPLETED`, `PARTIAL`, `CANCELLED`, `FAILED`.
+- **Database Durability**:
+  - SQLite adapter (`SQLiteCrawlRepository`) with foreign keys and WAL mode for local offline development.
+  - PostgreSQL schema (`003_multi_page_crawler.sql` & `003_rollback.sql`) with RLS and least-privilege security.
+- **REST Endpoints & Frontend UI**:
+  - `POST /api/v1/crawl`, `GET /api/v1/crawl/{job_id}`, `GET /api/v1/crawl/{job_id}/pages`, `GET /api/v1/crawl/{job_id}/pages/{page_id}`, `GET /api/v1/crawl/{job_id}/report`, `POST /api/v1/crawl/{job_id}/cancel`.
+  - Next.js UI components: `ScanForm` (mode toggle, page ceiling, depth selector), `CrawlProgressView` (animated progress bar, counters, cancel button), and `MultiPageReportView` (health score, category breakdown, deduplicated unique issues, crawled pages table with in-place inspection drawer).
+
+---
+
 ## 4. Testing Strategy & Quality Assurance
 
 ```

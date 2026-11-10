@@ -356,3 +356,37 @@ SERP_PROVIDER_API_KEY=         # Phase 3: Licensed SERP Provider
 GOOGLE_CLIENT_ID=              # Phase 6: Google Search Console OAuth
 GOOGLE_CLIENT_SECRET=          # Phase 6: Google Search Console OAuth
 ```
+
+---
+
+## 8. Multi-Page Asynchronous Website Crawler Architecture (Phase 2 WP 2.1)
+
+### 8.1 Crawler Ingestion & Scheduling Architecture
+The multi-page crawler extends the Phase 1 single-page scanner into an asynchronous, BFS-frontier multi-page website auditor:
+- **Seed Discovery & Canonical Normalization**: Starting seeds are validated with zero-trust SSRF guards, normalized (RFC 3986 canonicalization, tracking parameter stripping, lowercase scheme/hostname, port normalization), and placed at depth 0.
+- **RFC 9309 Robots.txt Evaluation**: Crawlability rules check `/robots.txt` from the origin root and assign five distinct status states (`ALLOWED`, `DISALLOWED`, `ABSENT_ALLOWED`, `UNREACHABLE_ALLOWED`, `INVALID_ALLOWED`). Disallowed URLs are marked with `DISALLOWED` page status without opening unauthorized outbound network requests.
+- **XML Sitemap Discovery & Frontier Ingestion**: Robots.txt directives and conventional root paths (`/sitemap.xml`) are parsed to sample canonical URLs for initial frontier enrichment.
+- **Breadth-First Search (BFS) Frontier Scheduling**: Discovered links are normalized and queued with ascending depth values. Frontier queue polling selects batches bounded by `min(max_concurrency, max_pages - pages_crawled)` to strictly enforce page ceiling limits.
+- **Crawl Boundary Containment**: Enforces either `SAME_ORIGIN` (scheme + host + port exact match) or `SAME_DOMAIN` (registrable domain match with public suffix awareness). External outbound links are strictly excluded from the crawl frontier.
+- **Polite Concurrency & Rate Limiting**: Request intervals (`request_delay_seconds = 0.25s`) and concurrency caps (`max_concurrency = 2`) prevent host exhaustion or denial-of-service impacts on target web servers.
+
+### 8.2 Six-State Job Lifecycle Model
+Every crawl job transitions through a deterministic, strictly monitored lifecycle:
+1. `QUEUED`: Job accepted, seed URL validated against SSRF protections, frontier initialized.
+2. `RUNNING`: Background `asyncio.Task` worker actively processing batches of pending URLs.
+3. `COMPLETED`: All discovered frontier URLs within max depth and page limits processed.
+4. `PARTIAL`: Hard page ceiling (`max_pages`) reached while pending URLs remain in frontier.
+5. `CANCELLED`: Graceful cancellation requested via `/api/v1/crawl/{job_id}/cancel`.
+6. `FAILED`: Fatal error or total connectivity failure preventing crawl completion.
+
+### 8.3 Deterministic Aggregation Engine
+Multi-page audit results are aggregated without heuristic approximation or LLM synthesis:
+- **Site-Wide Overall Score ($S_{\text{site}}$)**: Unweighted arithmetic mean across all successfully audited pages ($S_{\text{site}} = \frac{1}{|P_{\text{audited}}|} \sum_{p \in P_{\text{audited}}} S_p$). Returns `None` (NULL) if $|P_{\text{audited}}| = 0$ with zero denominator safety.
+- **Category Scores ($S_{c,\text{site}}$)**: Unweighted arithmetic mean of page category scores across Crawlability, Indexability, Document Quality, Content Quality, and Structured Data.
+- **Site-Wide Completeness ($C_{\text{site}}$)**: Average evidentiary completeness across all evaluated pages.
+- **Issue Deduplication & Impact Ranking**: Failed rule findings across pages are deduplicated by `rule_id` and ranked by severity (CRITICAL, HIGH, MEDIUM, LOW, INFO) and impact percentage ($\frac{N_{\text{affected}}}{N_{\text{total}}} \times 100\%$). Verbatim evidence snapshots and affected URL samples are retained.
+
+### 8.4 Dual-Database Architecture
+- **Local Development**: High-performance thread-safe SQLite adapter (`SQLiteCrawlRepository`) with foreign keys enabled, WAL mode, and persistent schema (`crawl_jobs`, `crawl_pages`, `crawl_page_findings`, `crawl_page_category_scores`, `crawl_site_aggregates`).
+- **Staging & Production**: Supabase PostgreSQL managed via Migration `003_multi_page_crawler.sql` with Row Level Security (RLS) enabled, least-privilege grants (`anon` revoked, `service_role` granted), and cascading foreign keys.
+

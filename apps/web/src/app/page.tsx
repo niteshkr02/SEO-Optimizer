@@ -11,9 +11,15 @@ import { ResolutionPlanView } from "../components/ResolutionPlanView";
 import { VerificationReportView } from "../components/VerificationReportView";
 import { ServiceCTA } from "../components/ServiceCTA";
 import { AdminLeadManagementView } from "../components/AdminLeadManagementView";
+import { CrawlProgressView } from "../components/CrawlProgressView";
+import { MultiPageReportView } from "../components/MultiPageReportView";
 import { Footer } from "../components/Footer";
 import {
   executeScan,
+  startCrawl,
+  getCrawlStatus,
+  getCrawlSiteReport,
+  cancelCrawl,
   generateResolutionPlan,
   compareVerification,
   exportVerificationMarkdown,
@@ -21,6 +27,8 @@ import {
   type AuditReportDTO,
   type ResolutionPlanDTO,
   type VerificationReportDTO,
+  type CrawlJobDTO,
+  type SiteAggregateReportDTO,
 } from "../lib/api/client";
 import {
   ShieldCheck,
@@ -40,12 +48,18 @@ export default function HomePage() {
   const [report, setReport] = useState<AuditReportDTO | null>(null);
   const [resolutionPlan, setResolutionPlan] = useState<ResolutionPlanDTO | null>(null);
   const [verificationReport, setVerificationReport] = useState<VerificationReportDTO | null>(null);
+  const [crawlJob, setCrawlJob] = useState<CrawlJobDTO | null>(null);
+  const [siteReport, setSiteReport] = useState<SiteAggregateReportDTO | null>(null);
+  const [isCancellingCrawl, setIsCancellingCrawl] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<{ code: string; message: string } | null>(null);
 
   const handleScan = async (url: string) => {
     setIsLoading(true);
     setError(null);
+    setReport(null);
+    setCrawlJob(null);
+    setSiteReport(null);
     setResolutionPlan(null);
     setVerificationReport(null);
     setActiveTab("FINDINGS");
@@ -75,6 +89,85 @@ export default function HomePage() {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCrawl = async (url: string, maxPages: number, maxDepth: number) => {
+    setIsLoading(true);
+    setError(null);
+    setReport(null);
+    setCrawlJob(null);
+    setSiteReport(null);
+    setResolutionPlan(null);
+    setVerificationReport(null);
+
+    let initialJob: CrawlJobDTO;
+    try {
+      initialJob = await startCrawl({
+        url,
+        maxPages,
+        maxDepth,
+        boundary: "SAME_ORIGIN",
+      });
+      setCrawlJob(initialJob);
+    } catch (err: unknown) {
+      setIsLoading(false);
+      if (err instanceof ScanApiError) {
+        setError({ code: err.code, message: err.message });
+      } else {
+        setError({
+          code: "CRAWL_FAILED",
+          message: err instanceof Error ? err.message : "Failed to initiate website crawl.",
+        });
+      }
+      return;
+    }
+
+    // Poll crawl status
+    const pollInterval = setInterval(async () => {
+      try {
+        const updated = await getCrawlStatus(initialJob.jobId);
+        setCrawlJob(updated);
+
+        if (updated.status === "COMPLETED" || updated.status === "PARTIAL") {
+          clearInterval(pollInterval);
+          try {
+            const aggregate = await getCrawlSiteReport(initialJob.jobId);
+            setSiteReport(aggregate);
+          } catch (reportErr: unknown) {
+            setError({
+              code: "REPORT_FETCH_ERROR",
+              message: reportErr instanceof Error ? reportErr.message : "Failed to load aggregated site report.",
+            });
+          } finally {
+            setIsLoading(false);
+          }
+        } else if (updated.status === "FAILED") {
+          clearInterval(pollInterval);
+          setIsLoading(false);
+          setError({
+            code: "CRAWL_FAILED",
+            message: updated.errorMessage || "Website crawl encountered an error and could not complete.",
+          });
+        } else if (updated.status === "CANCELLED") {
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        }
+      } catch {
+        // Retry on next interval
+      }
+    }, 1500);
+  };
+
+  const handleCancelCrawl = async () => {
+    if (!crawlJob) return;
+    setIsCancellingCrawl(true);
+    try {
+      await cancelCrawl(crawlJob.jobId);
+    } catch {
+      // Non-blocking
+    } finally {
+      setIsCancellingCrawl(false);
     }
   };
 
@@ -136,7 +229,7 @@ export default function HomePage() {
           </p>
 
           <div className="pt-4">
-            <ScanForm onScan={handleScan} isLoading={isLoading} />
+            <ScanForm onScan={handleScan} onCrawl={handleCrawl} isLoading={isLoading} />
           </div>
         </section>
 
@@ -172,8 +265,22 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Loading Indicator */}
-          {isLoading && (
+          {/* Multi-Page Crawl Progress View */}
+          {crawlJob && (crawlJob.status === "RUNNING" || crawlJob.status === "QUEUED") && (
+            <CrawlProgressView
+              job={crawlJob}
+              onCancel={handleCancelCrawl}
+              isCancelling={isCancellingCrawl}
+            />
+          )}
+
+          {/* Multi-Page Site Aggregate Report View */}
+          {siteReport && !isLoading && (
+            <MultiPageReportView report={siteReport} jobId={siteReport.jobId} />
+          )}
+
+          {/* Single-Page Loading Indicator */}
+          {isLoading && !crawlJob && (
             <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-12 text-center space-y-4 max-w-xl mx-auto animate-pulse">
               <div className="w-12 h-12 rounded-full border-4 border-cyan-500 border-t-transparent animate-spin mx-auto" />
               <h3 className="text-lg font-bold text-slate-100">
@@ -185,8 +292,8 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Audit Results View with Tabs */}
-          {report && !isLoading && (
+          {/* Single-Page Audit Results View with Tabs */}
+          {report && !isLoading && !siteReport && (
             <div className="space-y-8">
               {/* Score Overview Banner */}
               <ScoreOverview report={report} />
@@ -300,7 +407,7 @@ export default function HomePage() {
           )}
 
           {/* Initial Idle Information Grid */}
-          {!report && !isLoading && !error && (
+          {!report && !siteReport && !crawlJob && !isLoading && !error && (
             <div className="space-y-8 pt-4">
               <div className="text-center space-y-2">
                 <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-200">

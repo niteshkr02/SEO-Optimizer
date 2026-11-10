@@ -186,3 +186,20 @@ flowchart TD
 | **Lead Submission** | 3 submissions per 10 minutes | Client IP + Domain | HTTP 429 Rate Limit Exceeded |
 | **Admin API** | 120 requests per minute | Admin Session JWT | HTTP 429 Rate Limit Exceeded |
 | **GSC API Client** | Quota-aware rate limiter with exponential backoff | GSC Property | Queue request / Return cached status |
+
+---
+
+## 7. Multi-Page Crawler Security & Boundary Enforcement (Phase 2 WP 2.1)
+
+### 7.1 Frontier Ingestion & Boundary Containment
+The multi-page crawler introduces continuous link discovery across audited websites. To prevent abuse, SSRF pivoting, and unauthorized network traversal:
+1. **Continuous SSRF Re-validation**: Every discovered link (whether from HTML `<a>` tags, `<link rel="canonical">`, or XML sitemaps) is independently re-validated against the full SSRF pipeline before insertion into the crawl frontier.
+2. **Boundary Restrictions**: Crawls default to `SAME_ORIGIN` (scheme + host + port exact match). Discovered links targeting other origins or external domains are immediately rejected from the frontier.
+3. **Hard Page Ceilings**: Crawl jobs enforce a strict maximum page ceiling (`max_pages`, default 25, upper cap 100). The batch scheduler computes `min(max_concurrency, max_pages - pages_crawled)` on every iteration to guarantee the limit cannot be exceeded due to concurrency races.
+4. **Depth Bounds**: Hard limit on BFS link traversal distance (`max_depth`, default 3, max 5).
+5. **Polite Concurrency & Host Throttling**:
+   - `max_concurrency = 2` simultaneous connections per target host.
+   - `request_delay_seconds = 0.25s` minimum interval between fetches.
+6. **Streaming Response Caps**: Every page is subject to the `SafeHttpClient` 10 MB streaming response ceiling and 5-hop redirect limits with loop detection.
+7. **Database Security (Migration 003)**: PostgreSQL crawler tables (`crawl_jobs`, `crawl_pages`, `crawl_page_findings`, `crawl_page_category_scores`, `crawl_site_aggregates`) have Row-Level Security enabled, anonymous access explicitly revoked, and write/read operations restricted strictly to `service_role`.
+

@@ -33,25 +33,20 @@ os.environ["PERSISTENCE_BACKEND"] = "supabase"
 os.environ["SUPABASE_URL"] = staging_url
 os.environ["SUPABASE_SERVICE_ROLE_KEY"] = staging_key
 
+import app.api.v1.endpoints.leads as leads_endpoint_module
+import app.persistence.repository as repo_module
 from app.contracts.enums import (
     IssueSeverity,
     LeadStatus,
-    LeadUrgency,
     ProvenanceCategory,
-    RuleCategory,
     RuleState,
     ScanStatus,
 )
-from app.contracts.evidence import FindingEvidence
-from app.contracts.finding import Finding
-from app.contracts.scan import AuditReportDTO
 from app.core.config import settings
 from app.crawler.client import CrawlResult
 from app.crawler.redirects import RedirectEvaluation
 from app.main import app
 from app.persistence.factory import create_lead_repository
-import app.persistence.repository as repo_module
-import app.api.v1.endpoints.leads as leads_endpoint_module
 from tests.fixtures.html_samples import VALID_PAGE_HTML
 
 

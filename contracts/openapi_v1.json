@@ -201,6 +201,339 @@
         }
       }
     },
+    "/api/v1/crawl": {
+      "post": {
+        "tags": [
+          "Crawl"
+        ],
+        "summary": "Initiate asynchronous multi-page website crawl",
+        "description": "Validates seed URL with SSRF checks, queues a multi-page crawl job, and returns its status tracker.",
+        "operationId": "start_crawl_api_v1_crawl_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrawlJobCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrawlJobDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/crawl/{job_id}": {
+      "get": {
+        "tags": [
+          "Crawl"
+        ],
+        "summary": "Get crawl job status and progress",
+        "description": "Retrieves real-time progress percentage, discovered/crawled counters, and execution status.",
+        "operationId": "get_crawl_status_api_v1_crawl__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrawlJobDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/crawl/{job_id}/pages": {
+      "get": {
+        "tags": [
+          "Crawl"
+        ],
+        "summary": "List discovered and crawled pages",
+        "description": "Returns a paginated list of pages for a crawl job with optional depth and status filtering.",
+        "operationId": "list_crawl_pages_api_v1_crawl__job_id__pages_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "depth",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by crawl depth (0 to 5)",
+              "title": "Depth"
+            },
+            "description": "Filter by crawl depth (0 to 5)"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status (PENDING, CRAWLED, etc.)",
+              "title": "Status"
+            },
+            "description": "Filter by status (PENDING, CRAWLED, etc.)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Items per page"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Pagination offset",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Pagination offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response List Crawl Pages Api V1 Crawl  Job Id  Pages Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/crawl/{job_id}/pages/{page_id}": {
+      "get": {
+        "tags": [
+          "Crawl"
+        ],
+        "summary": "Get individual page diagnostic results",
+        "description": "Retrieves full page details including all 20 canonical SEO rule findings and category scores.",
+        "operationId": "get_page_details_api_v1_crawl__job_id__pages__page_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Page Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrawlPageDetailDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/crawl/{job_id}/report": {
+      "get": {
+        "tags": [
+          "Crawl"
+        ],
+        "summary": "Get site-wide aggregated crawl report",
+        "description": "Returns site-wide health scores, completeness, and deduplicated unique issues across all pages.",
+        "operationId": "get_site_report_api_v1_crawl__job_id__report_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAggregateReportDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/crawl/{job_id}/cancel": {
+      "post": {
+        "tags": [
+          "Crawl"
+        ],
+        "summary": "Cancel active crawl job",
+        "description": "Requests graceful cancellation of a running crawl job.",
+        "operationId": "cancel_crawl_api_v1_crawl__job_id__cancel_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Cancel Crawl Api V1 Crawl  Job Id  Cancel Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/resolution/plan": {
       "post": {
         "tags": [
@@ -1600,6 +1933,409 @@
         "title": "CodePatchProposal",
         "description": "Deterministic, reviewable code modification proposal."
       },
+      "CrawlBoundary": {
+        "type": "string",
+        "enum": [
+          "SAME_ORIGIN",
+          "SAME_DOMAIN"
+        ],
+        "title": "CrawlBoundary",
+        "description": "Boundary rule restricting crawl scope."
+      },
+      "CrawlJobCreateRequest": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "Starting seed website URL."
+          },
+          "maxPages": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Maxpages",
+            "description": "Maximum number of pages to crawl (1 to 100).",
+            "default": 25
+          },
+          "maxDepth": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Maxdepth",
+            "description": "Maximum crawl link depth from seed (0 to 5, seed=0).",
+            "default": 3
+          },
+          "boundary": {
+            "$ref": "#/components/schemas/CrawlBoundary",
+            "description": "SAME_ORIGIN | SAME_DOMAIN",
+            "default": "SAME_ORIGIN"
+          },
+          "requestDelaySeconds": {
+            "type": "number",
+            "maximum": 2.0,
+            "minimum": 0.1,
+            "title": "Requestdelayseconds",
+            "description": "Politeness interval between requests to same host.",
+            "default": 0.25
+          },
+          "maxConcurrency": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Maxconcurrency",
+            "description": "Simultaneous connections allowed per host.",
+            "default": 2
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "CrawlJobCreateRequest",
+        "description": "Request payload to initiate an asynchronous multi-page crawl."
+      },
+      "CrawlJobDTO": {
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "title": "Jobid",
+            "description": "Unique crawl job identifier."
+          },
+          "seedUrl": {
+            "type": "string",
+            "title": "Seedurl",
+            "description": "Original seed URL requested."
+          },
+          "baseDomain": {
+            "type": "string",
+            "title": "Basedomain",
+            "description": "Normalized root hostname."
+          },
+          "status": {
+            "$ref": "#/components/schemas/CrawlJobStatus",
+            "default": "QUEUED"
+          },
+          "progressPercentage": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Progresspercentage",
+            "description": "Calculated crawl completion percentage.",
+            "default": 0.0
+          },
+          "pagesDiscovered": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Pagesdiscovered",
+            "default": 1
+          },
+          "pagesCrawled": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Pagescrawled",
+            "default": 0
+          },
+          "pagesFailed": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Pagesfailed",
+            "default": 0
+          },
+          "pagesRemaining": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Pagesremaining",
+            "default": 1
+          },
+          "currentDepth": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Currentdepth",
+            "default": 0
+          },
+          "maxPages": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Maxpages",
+            "default": 25
+          },
+          "maxDepth": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Maxdepth",
+            "default": 3
+          },
+          "startedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startedat"
+          },
+          "completedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completedat"
+          },
+          "durationSeconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Durationseconds"
+          },
+          "errorMessage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errormessage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jobId",
+          "seedUrl",
+          "baseDomain"
+        ],
+        "title": "CrawlJobDTO",
+        "description": "Telemetry and status entity representing an asynchronous crawl job."
+      },
+      "CrawlJobStatus": {
+        "type": "string",
+        "enum": [
+          "QUEUED",
+          "RUNNING",
+          "COMPLETED",
+          "PARTIAL",
+          "FAILED",
+          "CANCELLED"
+        ],
+        "title": "CrawlJobStatus",
+        "description": "Lifecycle states of a multi-page crawl job."
+      },
+      "CrawlPageDTO": {
+        "properties": {
+          "pageId": {
+            "type": "string",
+            "title": "Pageid",
+            "description": "Unique page record identifier."
+          },
+          "jobId": {
+            "type": "string",
+            "title": "Jobid",
+            "description": "Associated crawl job identifier."
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "Requested page URL."
+          },
+          "normalizedUrl": {
+            "type": "string",
+            "title": "Normalizedurl",
+            "description": "Canonicalized deduplicated URL."
+          },
+          "depth": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Depth",
+            "description": "Link distance from seed URL.",
+            "default": 0
+          },
+          "parentUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parenturl",
+            "description": "Discovered from page."
+          },
+          "discoveryMethod": {
+            "$ref": "#/components/schemas/DiscoveryMethod",
+            "default": "HTML_LINK"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CrawlPageStatus",
+            "default": "PENDING"
+          },
+          "httpStatus": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Httpstatus",
+            "description": "HTTP status code."
+          },
+          "responseTimeMs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsetimems",
+            "description": "Roundtrip latency."
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title",
+            "description": "Extracted HTML title."
+          },
+          "canonicalUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonicalurl",
+            "description": "Declared canonical."
+          },
+          "overallScore": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overallscore"
+          },
+          "completenessScore": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completenessscore"
+          },
+          "errorReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errorreason"
+          },
+          "crawledAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crawledat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pageId",
+          "jobId",
+          "url",
+          "normalizedUrl"
+        ],
+        "title": "CrawlPageDTO",
+        "description": "Summary of an individual crawled page in a website crawl."
+      },
+      "CrawlPageDetailDTO": {
+        "properties": {
+          "page": {
+            "$ref": "#/components/schemas/CrawlPageDTO"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Findings",
+            "description": "20 canonical SEO findings."
+          },
+          "categoryScores": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CategoryScoreDTO"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/RuleCategory"
+            },
+            "type": "object",
+            "title": "Categoryscores",
+            "description": "Category-level scores for this page."
+          }
+        },
+        "type": "object",
+        "required": [
+          "page"
+        ],
+        "title": "CrawlPageDetailDTO",
+        "description": "Detailed audit diagnostic results for an individual crawled page."
+      },
+      "CrawlPageStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "FETCHING",
+          "CRAWLED",
+          "FAILED",
+          "DISALLOWED",
+          "SKIPPED"
+        ],
+        "title": "CrawlPageStatus",
+        "description": "Status of an individual discovered URL within a crawl job."
+      },
       "CriticalIssueSummaryDTO": {
         "properties": {
           "ruleId": {
@@ -1680,6 +2416,17 @@
         ],
         "title": "CriticalIssueSummaryDTO",
         "description": "Summarized critical or high-severity finding with verbatim evidence."
+      },
+      "DiscoveryMethod": {
+        "type": "string",
+        "enum": [
+          "SEED",
+          "HTML_LINK",
+          "SITEMAP",
+          "CANONICAL"
+        ],
+        "title": "DiscoveryMethod",
+        "description": "Channel through which a candidate URL was discovered."
       },
       "Finding": {
         "properties": {
@@ -2793,6 +3540,175 @@
         ],
         "title": "ServiceBriefDTO",
         "description": "Complete evidence-backed consultation brief for SEO engineers and clients."
+      },
+      "SiteAggregateReportDTO": {
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "title": "Jobid",
+            "description": "Crawl job identifier."
+          },
+          "seedUrl": {
+            "type": "string",
+            "title": "Seedurl",
+            "description": "Seed website URL."
+          },
+          "baseDomain": {
+            "type": "string",
+            "title": "Basedomain",
+            "description": "Target domain."
+          },
+          "overallScore": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overallscore"
+          },
+          "completenessScore": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completenessscore"
+          },
+          "categoryScores": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CategoryScoreDTO"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/RuleCategory"
+            },
+            "type": "object",
+            "title": "Categoryscores"
+          },
+          "totalPagesAnalyzed": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Totalpagesanalyzed",
+            "default": 0
+          },
+          "totalIssuesIdentified": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Totalissuesidentified",
+            "default": 0
+          },
+          "uniqueIssues": {
+            "items": {
+              "$ref": "#/components/schemas/SiteIssueSummaryDTO"
+            },
+            "type": "array",
+            "title": "Uniqueissues"
+          },
+          "crawledPages": {
+            "items": {
+              "$ref": "#/components/schemas/CrawlPageDTO"
+            },
+            "type": "array",
+            "title": "Crawledpages"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generatedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jobId",
+          "seedUrl",
+          "baseDomain"
+        ],
+        "title": "SiteAggregateReportDTO",
+        "description": "Comprehensive site-wide aggregated SEO health report."
+      },
+      "SiteIssueSummaryDTO": {
+        "properties": {
+          "ruleId": {
+            "type": "string",
+            "title": "Ruleid",
+            "description": "Audit rule identifier."
+          },
+          "category": {
+            "$ref": "#/components/schemas/RuleCategory",
+            "description": "Taxonomic category."
+          },
+          "severity": {
+            "$ref": "#/components/schemas/IssueSeverity",
+            "description": "Impact severity rating."
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Rule title."
+          },
+          "failingPagesCount": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Failingpagescount",
+            "description": "Count of pages failing this check.",
+            "default": 0
+          },
+          "totalPagesAudited": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Totalpagesaudited",
+            "description": "Total pages evaluated.",
+            "default": 0
+          },
+          "impactPercentage": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Impactpercentage",
+            "default": 0.0
+          },
+          "sampleUrls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sampleurls",
+            "description": "Sample URLs affected."
+          },
+          "sampleEvidence": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Sampleevidence",
+            "description": "Verbatim evidence snapshots."
+          },
+          "remediationGuidance": {
+            "type": "string",
+            "title": "Remediationguidance",
+            "description": "Standard remediation instructions."
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruleId",
+          "category",
+          "severity",
+          "title",
+          "remediationGuidance"
+        ],
+        "title": "SiteIssueSummaryDTO",
+        "description": "Aggregated issue occurrence across multiple crawled pages."
       },
       "SitemapSummaryDTO": {
         "properties": {
