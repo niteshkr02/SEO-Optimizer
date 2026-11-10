@@ -25,9 +25,13 @@ class Settings(BaseSettings):
         default_factory=lambda: [
             "http://localhost:3000",
             "http://127.0.0.1:3000",
+            "http://[::1]:3000",
             "http://localhost:3001",
+            "http://127.0.0.1:3001",
+            "http://[::1]:3001",
         ]
     )
+    CORS_ORIGIN_REGEX: str = r"^https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$"
 
     # Security & SSRF Guard
     ENFORCE_SSRF_PROTECTION: bool = True
